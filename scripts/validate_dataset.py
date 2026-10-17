@@ -1,4 +1,4 @@
-"""Read the patient CSV without changing it and report data quality checks.
+"""Check patient records, count their histories, and explain data-quality findings.
 
 Run from the repository root: python scripts/validate_dataset.py
 Only Python's built-in libraries are needed.
@@ -13,8 +13,10 @@ import json
 import math
 from pathlib import Path
 
+# Find the input file relative to this script, even when run from another folder.
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / 'data/raw/BioDiscovery_Z_all_100_patients_synthetic_dashboard.csv'
+# Expected CSV columns and the matching fields inside each patient history.
 FIELDS = ('subject_id demo_patient_id synthetic_patient_name synthetic_identity '
           'simulated_hospital hospital_assignment_simulated simulated_department '
           'department_assignment_simulated gender anchor_age anchor_year '
@@ -48,6 +50,7 @@ def identifier(value):
 
 
 def read_rows(path):
+    """Read each patient row as a dictionary keyed by the CSV column names."""
     # A single lab-history cell can be much larger than Python's default CSV limit.
     csv.field_size_limit(100_000_000)
     with Path(path).open(encoding='utf-8-sig', newline='') as handle:
@@ -64,6 +67,7 @@ def reject_constant(value):
 
 def validate(rows, expected_patients=100):
     """Check relationships and types; collect errors instead of repairing records."""
+    # Keep errors and totals together so one run reports all detected problems.
     errors = []
     totals = Counter()
     missing = Counter()
@@ -74,14 +78,17 @@ def validate(rows, expected_patients=100):
     labs_without_admission = 0
 
     def check(condition, message):
+        """Save an explanation when a data-quality rule fails."""
         if not condition:
             errors.append(message)
 
     def unique(value, seen, label):
+        """Detect an ID or name that has already appeared in this dataset."""
         check(value not in seen, f'duplicate {label}: {value}')
         seen.add(value)
 
     def date(value, label, optional=False):
+        """Read a date for format/order checks; allow blanks only when specified."""
         if optional and value in (None, ''):
             return None
         try:
@@ -91,9 +98,11 @@ def validate(rows, expected_patients=100):
             return None
 
     def whole(value, label, minimum=0):
+        """Check that a count or sequence is a whole number within its allowed range."""
         valid = (isinstance(value, str) and value.isdigit()) or type(value) is int
         check(valid and int(value) >= minimum, f'invalid integer: {label}')
 
+    # First check each patient, then inspect the histories stored in that row.
     for index, row in enumerate(rows, 1):
         label = f'row {index}'
         if set(row) != set(FIELDS) or any(value is None for value in row.values()):
@@ -127,6 +136,7 @@ def validate(rows, expected_patients=100):
         check(row['data_source_url'] == 'https://physionet.org/content/mimic-iv-demo/2.2', f'{label}: unexpected source URL')
         date(row['dod'], f'{label}.dod', optional=True)
 
+        # Turn JSON text into lists so we can count records and inspect their fields.
         parsed = {}
         for field, count_field in HISTORIES.items():
             try:
@@ -207,7 +217,9 @@ def validate(rows, expected_patients=100):
 
     check(len(rows) == expected_patients, f'expected {expected_patients} patient rows; found {len(rows)}')
     check(len(subjects) == expected_patients, f'expected {expected_patients} unique subjects; found {len(subjects)}')
+    # Package the findings for teammates and programs that read the JSON report.
     return {
+        'report_description': 'Patient counts, missing values, identifier checks, and encounter links for the BioDiscovery Z demo dataset.',
         'status': 'pass' if not errors else 'fail',
         'patient_rows': len(rows), 'unique_subject_ids': len(subjects),
         'unique_demo_patient_ids': len(demo_ids), 'unique_fictional_names': len(names),
@@ -227,6 +239,7 @@ def validate(rows, expected_patients=100):
 
 
 def main():
+    """Run the command-line workflow and save findings for the team to review."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--input', type=Path, default=DATA)
     parser.add_argument('--output', type=Path, default=ROOT / 'reports/dataset-validation.json')
