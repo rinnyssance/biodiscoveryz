@@ -16,6 +16,14 @@ def database_path() -> Path:
 
 def make_engine(path: Path | str | None = None) -> Engine:
     """Create a connection manager; each API request gets its own connection."""
+    mode = os.environ.get('BDZ_DATA_SOURCE', 'sqlite').strip().lower()
+    if mode == 'db2':
+        raise RuntimeError(
+            'Db2 patient schema and authorized connection details are not configured. '
+            'The API will not fall back to local SQLite data.'
+        )
+    if mode != 'sqlite':
+        raise ValueError('BDZ_DATA_SOURCE must be sqlite or db2.')
     location = Path(path) if path is not None else database_path()
     location = location.resolve()
     location.parent.mkdir(parents=True, exist_ok=True)

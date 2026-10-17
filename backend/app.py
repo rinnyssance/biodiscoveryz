@@ -1,4 +1,4 @@
-"""Serve local health and patient-directory requests from the SQLite database.
+"""Serve local health, patient-directory, and clinical-history requests.
 
 Start with: python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000
 The importer is a separate command; requests never re-import the CSV.
@@ -12,7 +12,10 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.engine import Engine
 
 from backend.database import make_engine
+from backend.analytics_routes import router as analytics_router
+from backend.fhir_patient import router as fhir_router
 from backend.models import imports, metadata, patients
+from backend.patient_routes import router as patient_router
 from backend.schemas import HealthResponse, PatientPage, PatientSummary
 
 
@@ -31,7 +34,7 @@ def create_app(engine: Engine | None = None) -> FastAPI:
 
     app = FastAPI(
         title='BioDiscovery Z local data API',
-        version='0.1.0',
+        version='0.2.0',
         description='Read-only access to the deidentified demo dataset with fictional identities. '
                     'Neurological flags are preliminary; this is not a clinically validated system.',
         lifespan=lifespan,
@@ -68,6 +71,9 @@ def create_app(engine: Engine | None = None) -> FastAPI:
             items = [PatientSummary.model_validate(dict(row)) for row in rows]
         return PatientPage(total=total, limit=limit, offset=offset, items=items)
 
+    app.include_router(patient_router)
+    app.include_router(analytics_router)
+    app.include_router(fhir_router)
     return app
 
 

@@ -5,7 +5,7 @@ The backend was tested on Python 3.10.11 using the pinned direct dependencies in
 
 | Check | Result |
 |---|---|
-| Combined suite (`python -m pytest -q`) | 30 tests passed, including the original 10 validator tests. |
+| Combined suite (`python -m pytest -q`) | 63 tests passed, plus 7 subtests, including the original validator tests. |
 | Full import | 100 patients, 275 admissions, 4,506 diagnoses, and 107,727 lab events. |
 | Source comparison | Every stored patient field and clinical event matched its source after the documented storage conversions. |
 | Labs without admission links | All 28,420 retained. |
@@ -15,6 +15,12 @@ The backend was tested on Python 3.10.11 using the pinned direct dependencies in
 | Wrong-patient encounter link | Rejected by a database foreign-key constraint. |
 | Patient API | Search, pagination, empty results, literal wildcard input, and invalid parameters checked. |
 | Actual local Uvicorn server | Health, patient search, `/docs`, and `/openapi.json` passed HTTP checks. |
+| Patient detail and histories | All 100 patient summaries and first/last event pages compared with the CSV; full pages checked for one patient's visits, diagnoses, and labs. |
+| Missing patients / invalid pages | 404, 422, empty pages, and unimported-data 503 responses checked. |
+| Descriptive summaries | Database counts compared with the source, including existing preliminary screening flags. |
+| FHIR R4 Patient resources | All 100 examples validated with the official HL7 R4 JSON schema; source schema SHA-256 `2230406893b4cf002a4ee1e5e2bbeca22ac5d2d4931b3e9ef7b9594bbc376a01`. |
+| Db2 connection probe | Settings and TLS connection string tested using an injected fake driver; live Db2 connectivity was unavailable. |
+| Updated live Uvicorn server | Health, patient histories, summaries, FHIR Patient, `/docs`, and OpenAPI returned HTTP 200. |
 | Package compatibility | `python -m pip check` reported no broken requirements. |
 
 The test run emitted one upstream deprecation warning: the installed Starlette
@@ -22,7 +28,8 @@ test client still supports HTTPX but recommends HTTPX2 for a future test-client
 update. It did not cause a test failure. Transitive dependencies are resolved by pip;
 the requirement files pin the directly used packages.
 
-These checks cover the local backend. No Vercel deployment, newer Python runtime,
-PostgreSQL database, authentication, or clinical validation was tested. The temporary
+These checks cover the local backend. No live Db2 data connection, frontend build,
+Vercel deployment, newer Python runtime, patient authentication, or clinical
+validation was tested. The temporary
 server used for the HTTP check was stopped afterward. Follow the
 [backend guide](../backend/README.md) to start your own local server.

@@ -7,6 +7,7 @@ Start with the results for a quick overview, then use the methods and dictionary
 | [validation-results.md](validation-results.md) | Patient and history totals, missing values, test results, and limits of the checks. |
 | [materials-and-methods.md](materials-and-methods.md) | Where the data comes from, how Python checks it, and how to run the checks yourself. |
 | [data-dictionary.md](data-dictionary.md) | What each CSV field and nested history field means. |
+| [implementation-boundary.md](implementation-boundary.md) | What is in this repository and what needs frontend or Db2 access. |
 | [backend-verification.md](backend-verification.md) | Database import counts, API checks, and the tested backend environment. |
 
 These guides describe Erin's science and data work. A successful software check shows

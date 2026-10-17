@@ -38,6 +38,10 @@ from Git. Its expected counts are 100 patients, 275 admissions, 4,506 diagnoses,
 | [import_dataset.py](import_dataset.py) | Validates the CSV, separates its JSON histories into tables, and checks saved counts. |
 | [schemas.py](schemas.py) | Defines the fields and types the API sends back as JSON. |
 | [app.py](app.py) | Provides the health route and searchable, paginated patient-directory route. |
+| [patient_routes.py](patient_routes.py) | Retrieves one patient and bounded pages of their visits, diagnoses, and labs. |
+| [analytics_routes.py](analytics_routes.py) | Computes supported dataset totals, demographics, and preliminary screening counts. |
+| [fhir_patient.py](fhir_patient.py) | Maps fictional patient identity and gender to a FHIR R4 Patient resource. |
+| [db2_probe.py](db2_probe.py) | Optionally checks authorized Db2 connectivity without changing records. |
 | [__init__.py](__init__.py) | Marks this folder as a Python package so its modules can be imported. |
 | [../requirements.txt](../requirements.txt) | Pins the directly used backend libraries to the versions tested. |
 | [../requirements-dev.txt](../requirements-dev.txt) | Adds pytest and the HTTP test client to the backend libraries. |
@@ -81,6 +85,14 @@ and `--database PATH`; its expected dataset size remains 100 patients.
 |---|---|
 | `GET /health` | `status`, database connection status, and `dataset_loaded`. |
 | `GET /api/patients?search=alex&limit=20&offset=0` | Matching `total`, requested `limit`/`offset`, and patient summary `items`. |
+| `GET /api/patients/{demo_patient_id}` | One patient's demographics, supplied totals, source, and preliminary flags. |
+| `GET /api/patients/{demo_patient_id}/admissions` | A page of that patient's visits, ordered by shifted admission time and visit ID. |
+| `GET /api/patients/{demo_patient_id}/diagnoses` | A page of diagnosis assignments, grouped by visit and source sequence. |
+| `GET /api/patients/{demo_patient_id}/labs` | A page of lab observations, ordered by shifted chart time and unique event ID. |
+| `GET /api/overview` | Counts of stored patients, visits, diagnoses, labs, and labs without a visit link. |
+| `GET /api/demographics/summary` | Source gender-code counts and descriptive anchor-age bands. |
+| `GET /api/neurology/screening-summary` | Counts of existing screening flags, labeled preliminary. |
+| `GET /fhir/Patient/{demo_patient_id}` | A small FHIR R4 Patient example using only supported demo identity fields. |
 
 Search matches fictional names and demo IDs without case sensitivity. `%`, `_`, and
 SQL-looking text are treated as literal search text. Results are ordered by demo ID.
@@ -88,6 +100,11 @@ SQL-looking text are treated as literal search text. Results are ordered by demo
 with no matches or a page beyond the results returns an empty list. Before import,
 the health response shows `dataset_loaded: false` and the patient route returns HTTP
 503 with the import command. Patient summaries do not include the large event lists.
+Detail and history routes return 404 for unknown demo IDs. History routes accept
+`limit=1..100` and `offset>=0`, and return `total` and `items`. Each query filters on
+the source patient ID, so another patient's events cannot enter a response. Diagnosis
+records have no diagnosis timestamp; their visit/sequence order is not a disease
+timeline. Lab results with no visit link remain available in their patient's history.
 
 ## Run the tests
 
@@ -101,15 +118,36 @@ with its source; other tests deliberately cause import failures and invalid requ
 
 ## Scope and hosting
 
-This milestone implements local storage and two read-only API endpoints. Individual
-patient-detail/history endpoints and new clinical screening rules remain future work.
-Existing neurological flags are preliminary; no clinical cohort is validated here.
+This milestone implements local storage, patient detail/history endpoints, and
+supported descriptive summaries. Existing neurological flags are preliminary;
+no clinical cohort, neurological trend, or disease outcome is validated here.
+
+The FHIR Patient response uses stable demo IDs, fictional names, and the supplied
+gender code. It omits birth dates because the age and year fields are shifted. The
+100 generated Patient resources passed the official [FHIR R4 JSON schema](https://hl7.org/fhir/R4/fhir.schema.json)
+on this machine. To repeat the schema check, download that file and run
+`python -m scripts.validate_fhir --schema PATH` after importing the dataset. This
+one resource type does not make the application a full FHIR server. Condition,
+Encounter, and Observation mappings require further reviewed source mappings.
+
+`BDZ_DATA_SOURCE` defaults to `sqlite` for local development. Selecting `db2`
+stops startup with a clear error; it never substitutes SQLite records. The optional
+`python -m backend.db2_probe` uses the `ibm_db` driver and environment settings
+shown in `.env.example` to test a TLS connection to an authorized Db2 server. The
+driver is not a required dependency for local development. The probe has only been
+tested with an injected test driver because live connection details and table
+definitions are not available in this repository. It does not query clinical tables,
+alter the populated Db2 database, or establish application data integration.
 
 The documented server binds to your own computer at `127.0.0.1`. No public deployment,
 authentication, or IBM Z integration is configured. Vercel can run FastAPI, so it can
 host the API without a separately rented server. This local SQLite setup is not a
 configured Vercel deployment: persistent database writes need a suitable storage plan
 before hosting, and the deployment Python version must be checked separately.
+Patient-level endpoints currently have no user authentication. Keep this server
+bound to `127.0.0.1`; do not publish these routes until access rules are implemented
+and reviewed. CORS is not enabled for external origins. Frontend and Db2 integration
+requirements are recorded in [implementation boundary](../docs/implementation-boundary.md).
 
 Technical references: [FastAPI SQL database guide](https://fastapi.tiangolo.com/tutorial/sql-databases/),
 [SQLAlchemy SQLite foreign keys](https://docs.sqlalchemy.org/en/20/dialects/sqlite.html#foreign-key-support),

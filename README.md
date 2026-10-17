@@ -77,12 +77,12 @@ ordering. The file contains **275 admissions, 4,506 diagnoses, and 107,727 lab e
 28,420 labs legitimately have no admission ID. The original validator passes its 10 tests. The 59 positive preliminary neurological screening flags are not a validated
 cohort; all 100 patient validation flags remain false. No new diagnoses are inferred.
 
-**Local backend:** The CSV now imports into separate SQLite tables for patients,
-admissions, diagnoses, and lab events. Repeat imports do not add duplicates. FastAPI
-provides `/health` and a searchable, paginated `/api/patients` endpoint. The complete
-suite contains 30 passing tests, including full source-to-database comparisons and
-rollback checks. Follow the [backend setup guide](backend/README.md) to install the
-packages, import the dataset, and run the server locally.
+**Local backend:** The CSV imports into separate SQLite tables for patients,
+admissions, diagnoses, and lab events. FastAPI serves patient search, individual
+records, paginated histories, supported dataset summaries, and a FHIR R4 Patient
+example. Repeat imports do not add duplicates. See the [backend setup guide](backend/README.md)
+for commands and the [integration boundary](docs/implementation-boundary.md) for
+what still needs the frontend and Db2 schema.
 
 **Run the data checks from the repository root:**
 
@@ -163,16 +163,18 @@ Peer-reviewed literature, official technical documentation, healthcare standards
 
 ## 🛠️ Technology Stack
 
-The current implementation supports dataset validation, relational import, and a local read-only API.
+The current implementation supports dataset validation, relational import,
+descriptive summaries, FHIR Patient translation, and a local read-only API.
 
 | Component | Implemented tools and purpose |
 |---|---|
 | Python runtime | Python 3.10.11, used to run and test this milestone |
 | Data ingestion and validation | Built-in `csv`, `json`, `collections`, `datetime`, `math`, `hashlib`, `pathlib`, and `argparse` |
-| API routes | FastAPI for health checks and a searchable patient directory |
-| Response formats | Pydantic for typed JSON patient summaries and pagination |
+| API routes | FastAPI for health, patient records, histories, and supported summaries |
+| Response formats | Pydantic for typed JSON patient and history responses |
 | Database access | SQLAlchemy for table definitions, queries, and atomic imports |
 | Local database | SQLite for patient, admission, diagnosis, and laboratory tables |
+| FHIR demonstration | Python mapping for Patient resources; `jsonschema` verifies official R4 JSON structure in development |
 | Local server | Uvicorn, bound to `127.0.0.1` |
 | Automated tests | pytest for the combined suite, existing `unittest` checks, and HTTPX through the API test client |
 | Version control | Git and GitHub to track and share the work |
@@ -183,9 +185,11 @@ The current implementation supports dataset validation, relational import, and a
 validator still uses only Python's standard library. The original CSV preparation
 tools are not established by repository evidence.
 
-**Future options:** A newer Python runtime, PostgreSQL for hosted persistent storage,
-and pandas if later analysis needs it. These are not implemented or tested deployment
-components. Local setup and hosting limits are explained in the [backend guide](backend/README.md).
+**Integration boundary:** A Db2 connection probe is available, but live Db2 data
+mapping cannot be completed until the team supplies authorized access and its actual
+table definitions. The React/Vite dashboard is not in this repository yet, so there
+is no frontend build or Vercel deployment to verify. See the [implementation boundary](docs/implementation-boundary.md).
+PostgreSQL, pandas, and a newer Python runtime remain possible future choices.
 
 
 ---

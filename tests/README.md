@@ -34,6 +34,13 @@ files, compares every stored clinical event, checks duplicate-free repeat import
 rejects changed snapshots, simulates a failed write, and exercises the patient API.
 
 Install `requirements-dev.txt`, then run `python -m pytest -q` from the repository
-root to run both suites: 30 tests total. Temporary test databases are separate from
+root to run both suites: the dataset and backend tests together. Temporary test databases are separate from
 the database used by the running application. The [backend guide](../backend/README.md)
 explains the environment setup. `pytest.ini` points pytest at this folder.
+
+The newer tests also compare all 100 patient summaries and first/last event pages
+against the source CSV, walk an entire patient's history without page gaps, check
+unknown IDs and invalid pagination, verify supported analytics, and check the FHIR
+Patient fields. A fake Db2 driver tests connection configuration without claiming a
+live team database connection. The official R4 schema check runs separately with
+`scripts/validate_fhir.py`; see the [script guide](../scripts/README.md).

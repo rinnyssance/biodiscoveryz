@@ -207,5 +207,237 @@ def test_empty_database_explains_import_step(tmp_path):
 
 def test_openapi_describes_available_endpoints(client):
     schema = client.get('/openapi.json').json()
-    assert set(schema['paths']) == {'/health', '/api/patients'}
+    assert set(schema['paths']) == {
+        '/health', '/api/patients', '/api/patients/{demo_patient_id}',
+        '/api/patients/{demo_patient_id}/admissions',
+        '/api/patients/{demo_patient_id}/diagnoses',
+        '/api/patients/{demo_patient_id}/labs',
+        '/api/overview', '/api/demographics/summary',
+        '/api/neurology/screening-summary', '/fhir/Patient/{demo_patient_id}',
+    }
     assert 'PatientSummary' in schema['components']['schemas']
+
+
+def test_patient_details_match_all_source_rows(client, source_rows):
+    """Check each patient's demographics, provenance, shifted dates, and counts."""
+    for source in source_rows:
+        response = client.get('/api/patients/' + source['demo_patient_id'])
+        assert response.status_code == 200
+        actual = response.json()
+        assert set(actual) == set(source) - {'admissions_json', 'diagnoses_json', 'laboratory_results_json'}
+        for key, value in actual.items():
+            expected = source[key]
+            if isinstance(value, bool):
+                assert value == (expected == 'True')
+            elif isinstance(value, int):
+                assert value == int(expected)
+            else:
+                assert value == (expected or None)
+
+
+HISTORY_CASES = [
+    ('admissions', 'admissions_json', lambda row: (row['admittime'], row['hadm_id'])),
+    ('diagnoses', 'diagnoses_json', lambda row: (row['hadm_id'], row['seq_num'])),
+    ('labs', 'laboratory_results_json', lambda row: (row['charttime'], row['labevent_id'])),
+]
+
+
+@pytest.mark.parametrize('route,field,sort_key', HISTORY_CASES)
+def test_history_pages_match_each_patients_source(client, source_rows, route, field, sort_key):
+    """Check the first and last pages for every patient, including missing values."""
+    for source in source_rows:
+        expected = sorted(json.loads(source[field]), key=sort_key)
+        for row in expected:
+            row['subject_id'] = int(source['subject_id'])
+        for offset in sorted({0, max(0, len(expected) - 100)}):
+            response = client.get(f"/api/patients/{source['demo_patient_id']}/{route}",
+                                  params={'limit': 100, 'offset': offset})
+            assert response.status_code == 200
+            page = response.json()
+            assert page['demo_patient_id'] == source['demo_patient_id']
+            assert page['subject_id'] == int(source['subject_id'])
+            assert page['total'] == len(expected)
+            assert page['limit'] == 100 and page['offset'] == offset
+            assert page['items'] == expected[offset:offset + 100]
+
+
+@pytest.mark.parametrize('route,field,sort_key', HISTORY_CASES)
+def test_complete_patient_history_has_no_page_gaps(client, source_rows, route, field, sort_key):
+    """Walk all pages for one patient and compare the combined list with the source."""
+    source = source_rows[0]
+    expected = sorted(json.loads(source[field]), key=sort_key)
+    for row in expected:
+        row['subject_id'] = int(source['subject_id'])
+    combined = []
+    for offset in range(0, len(expected), 17):
+        response = client.get(f"/api/patients/{source['demo_patient_id']}/{route}",
+                              params={'limit': 17, 'offset': offset})
+        assert response.status_code == 200
+        combined.extend(response.json()['items'])
+    assert combined == expected
+    empty = client.get(f"/api/patients/{source['demo_patient_id']}/{route}",
+                       params={'offset': len(expected)}).json()
+    assert empty['items'] == [] and empty['total'] == len(expected)
+
+
+@pytest.mark.parametrize('suffix', ['', '/admissions', '/diagnoses', '/labs'])
+def test_unknown_patient_returns_404(client, suffix):
+    response = client.get('/api/patients/BDZ-NOT-FOUND' + suffix)
+    assert response.status_code == 404
+    assert response.json()['detail'] == 'Patient not found.'
+
+
+@pytest.mark.parametrize('route', ['admissions', 'diagnoses', 'labs'])
+@pytest.mark.parametrize('query', ['limit=0', 'limit=101', 'offset=-1', 'limit=abc'])
+def test_history_pagination_bounds(client, route, query):
+    assert client.get(f'/api/patients/BDZ-001/{route}?{query}').status_code == 422
+
+
+def test_history_defaults_and_optional_lab_links(client, source_rows):
+    """Default pages are limited, and a missing encounter link remains null."""
+    response = client.get('/api/patients/BDZ-001/labs')
+    page = response.json()
+    assert response.status_code == 200 and page['limit'] == 50
+    assert len(page['items']) == 50 and page['offset'] == 0
+    expected = sorted(json.loads(source_rows[0]['laboratory_results_json']),
+                      key=lambda row: (row['charttime'], row['labevent_id']))
+    missing_index = next(index for index, row in enumerate(expected) if row['hadm_id'] is None)
+    result = client.get('/api/patients/BDZ-001/labs', params={'offset': missing_index, 'limit': 1}).json()
+    assert result['items'][0]['hadm_id'] is None
+    assert result['items'][0]['labevent_id'] == expected[missing_index]['labevent_id']
+
+
+def test_patient_routes_before_import_return_503(tmp_path):
+    engine = make_engine(tmp_path / 'not-imported.sqlite')
+    try:
+        with TestClient(create_app(engine)) as client:
+            for suffix in ['', '/admissions', '/diagnoses', '/labs']:
+                response = client.get('/api/patients/BDZ-001' + suffix)
+                assert response.status_code == 503
+                assert 'import' in response.json()['detail'].lower()
+    finally:
+        engine.dispose()
+
+
+def test_existing_patient_with_no_events_returns_empty_pages(tmp_path, populated):
+    """A patient with an empty history exists; they should not receive a 404."""
+    engine = make_engine(tmp_path / 'empty-history.sqlite')
+    metadata.create_all(engine)
+    with populated.connect() as connection:
+        patient = dict(connection.execute(select(patients)).mappings().first())
+    patient.update(admission_count=0, diagnosis_count=0, lab_result_count=0)
+    try:
+        # This deliberately small fixture isolates empty-history behavior.
+        with engine.begin() as connection:
+            connection.execute(patients.insert(), patient)
+            connection.execute(imports.insert(), {
+                'id': 1, 'source_sha256': 'test-fixture', 'patient_count': 1,
+                'admission_count': 0, 'diagnosis_count': 0, 'lab_count': 0,
+            })
+        with TestClient(create_app(engine)) as client:
+            for route in ['admissions', 'diagnoses', 'labs']:
+                response = client.get(f"/api/patients/{patient['demo_patient_id']}/{route}")
+                assert response.status_code == 200
+                assert response.json()['total'] == 0 and response.json()['items'] == []
+    finally:
+        engine.dispose()
+
+
+def test_overview_and_demographics_use_stored_data(client, source_rows):
+    """Compare aggregate responses with counts recomputed from the source rows."""
+    overview = client.get('/api/overview').json()
+    assert overview['patient_count'] == len(source_rows) == 100
+    assert overview['admission_count'] == sum(int(row['admission_count']) for row in source_rows)
+    assert overview['diagnosis_count'] == sum(int(row['diagnosis_count']) for row in source_rows)
+    assert overview['lab_event_count'] == sum(int(row['lab_result_count']) for row in source_rows)
+    assert overview['lab_events_without_admission'] == sum(
+        event['hadm_id'] is None for row in source_rows
+        for event in json.loads(row['laboratory_results_json']))
+    result = client.get('/api/demographics/summary').json()
+    assert result['patient_denominator'] == 100
+    assert result['gender_codes'] == {
+        code: sum(row['gender'] == code for row in source_rows) for code in ['F', 'M']}
+    assert sum(result['anchor_age_groups'].values()) == 100
+
+
+def test_neurological_summary_remains_preliminary(client, source_rows):
+    result = client.get('/api/neurology/screening-summary').json()
+    assert result['patient_denominator'] == 100
+    assert result['preliminary_screen_positive'] == sum(
+        row['neurology_preliminary_screen'] == 'True' for row in source_rows)
+    assert result['validation_flag_positive'] == sum(
+        row['neurology_screen_validated'] == 'True' for row in source_rows) == 0
+    assert 'preliminary' in result['note'].lower()
+
+
+def test_fhir_patient_uses_only_supported_demo_fields(client, source_rows):
+    """Check stable IDs, fictional names, and no invented birth dates for all patients."""
+    for row in source_rows:
+        response = client.get('/fhir/Patient/' + row['demo_patient_id'])
+        assert response.status_code == 200
+        resource = response.json()
+        assert resource['resourceType'] == 'Patient'
+        assert resource['id'] == row['demo_patient_id']
+        assert resource['identifier'][0]['value'] == row['demo_patient_id']
+        assert resource['name'][0]['text'] == row['synthetic_patient_name']
+        assert resource['gender'] == {'F': 'female', 'M': 'male'}[row['gender']]
+        assert resource['meta']['tag'][0]['code'] == 'fictional-identity'
+        assert 'birthDate' not in resource and 'managingOrganization' not in resource
+
+
+def test_analytics_and_fhir_require_loaded_data(tmp_path):
+    engine = make_engine(tmp_path / 'unloaded.sqlite')
+    try:
+        with TestClient(create_app(engine)) as client:
+            for path in ['/api/overview', '/api/demographics/summary',
+                         '/api/neurology/screening-summary', '/fhir/Patient/BDZ-001']:
+                assert client.get(path).status_code == 503
+    finally:
+        engine.dispose()
+
+
+def test_fhir_patient_missing_id_returns_404(client):
+    assert client.get('/fhir/Patient/BDZ-UNKNOWN').status_code == 404
+
+
+def test_db2_mode_does_not_use_sqlite(monkeypatch, tmp_path):
+    """A requested Db2 connection must not silently read the local demo database."""
+    monkeypatch.setenv('BDZ_DATA_SOURCE', 'db2')
+    with pytest.raises(RuntimeError, match='will not fall back'):
+        make_engine(tmp_path / 'fallback.sqlite')
+    assert not (tmp_path / 'fallback.sqlite').exists()
+
+
+def test_db2_probe_requires_configuration_without_leaking_password(monkeypatch):
+    """The optional probe needs explicit settings and passes secrets separately."""
+    from backend.db2_probe import connection_string, probe, settings_from_environment
+    for name in ['BDZ_DB2_HOST', 'BDZ_DB2_PORT', 'BDZ_DB2_DATABASE', 'BDZ_DB2_USERNAME',
+                 'BDZ_DB2_PASSWORD', 'BDZ_DB2_SSL_CERTIFICATE']:
+        monkeypatch.delenv(name, raising=False)
+    with pytest.raises(ValueError, match='Missing Db2 settings'):
+        settings_from_environment()
+    values = {'BDZ_DB2_HOST': 'db2.example.test', 'BDZ_DB2_PORT': '50001',
+              'BDZ_DB2_DATABASE': 'TESTDB', 'BDZ_DB2_USERNAME': 'reader',
+              'BDZ_DB2_PASSWORD': 'example-secret', 'BDZ_DB2_SSL_CERTIFICATE': 'server.pem'}
+    for name, value in values.items():
+        monkeypatch.setenv(name, value)
+    settings = settings_from_environment()
+    assert 'example-secret' not in connection_string(settings)
+
+    class ExampleDriver:
+        def connect(self, dsn, username, password):
+            assert 'SECURITY=SSL' in dsn and 'example-secret' not in dsn
+            assert (username, password) == ('reader', 'example-secret')
+            return object()
+
+        def exec_immediate(self, connection, statement):
+            assert statement == 'SELECT CURRENT SERVER FROM SYSIBM.SYSDUMMY1'
+            return object()
+
+        def fetch_tuple(self, statement):
+            return ('TESTDB',)
+
+        def close(self, connection):
+            pass
+
+    assert probe(ExampleDriver()) == {'status': 'connected', 'server': 'TESTDB'}
