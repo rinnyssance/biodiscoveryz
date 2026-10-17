@@ -1,10 +1,17 @@
-# Dataset provenance and license
+# Dataset files and their source
 
 `raw/BioDiscovery_Z_all_100_patients_synthetic_dashboard.csv` is Erin's supplied
-consolidated import artifact, copied without modification. It combines deidentified
+patient-level input for dataset inspection and history validation. It combines deidentified
 clinical records with fictional patient names and simulated hospital/department
 assignments. The clinical records are not wholly synthetic. The added assignments
 do not describe actual hospital provenance. Dates remain deidentified/shifted.
+
+| File or folder | What it is for |
+|---|---|
+| [raw/](raw/) | Holds the patient CSV and a short guide to its contents. |
+| [raw/BioDiscovery_Z_all_100_patients_synthetic_dashboard.csv](raw/BioDiscovery_Z_all_100_patients_synthetic_dashboard.csv) | Supplies demographics, admissions, diagnoses, and labs to the validator. |
+| [LICENSE.txt](LICENSE.txt) | Contains the original ODbL terms for sharing and reusing the dataset. |
+| [README.md](README.md) | Explains dataset provenance, fictional fields, attribution, and licensing. |
 
 Documented source: [MIMIC-IV Clinical Database Demo v2.2](https://physionet.org/content/mimic-iv-demo/2.2/).
 The derived database is made available under the **Open Data Commons Open Database
