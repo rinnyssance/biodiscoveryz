@@ -1,5 +1,7 @@
 # Erin's dataset methods
 
+Use this guide to follow the validation workflow, run it yourself, and understand its limits.
+
 ## What is available
 
 Erin's supplied CSV contains one row per patient and three JSON histories per row.
