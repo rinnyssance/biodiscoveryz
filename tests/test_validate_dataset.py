@@ -9,11 +9,14 @@ from scripts.validate_dataset import DATA, identifier, read_rows, validate
 
 
 class DatasetChecks(unittest.TestCase):
+    """Check real data totals and confirm that common mistakes are detected."""
     @classmethod
     def setUpClass(cls):
+        """Read the demo dataset once so all tests use the same source rows."""
         cls.rows = read_rows(DATA)
 
     def sample(self):
+        """Build a small example in memory to isolate one problem at a time."""
         # Keep one real patient but trim histories so each failure is easy to follow.
         row = deepcopy(self.rows[0])
         admissions = json.loads(row['admissions_json'])[:1]
@@ -29,6 +32,7 @@ class DatasetChecks(unittest.TestCase):
         return row
 
     def test_full_dataset_counts_and_unchanged_input(self):
+        """Verify the complete dataset totals and protect the source file from edits."""
         before = hashlib.sha256(DATA.read_bytes()).hexdigest()
         report = validate(self.rows)
         self.assertEqual(report['errors'], [])
@@ -42,6 +46,7 @@ class DatasetChecks(unittest.TestCase):
         self.assertEqual(before, '8aef08b9850a4b0ab0cb74c704b929dad970fe9e9a6b81b2a7195d97815f1bbd')
 
     def test_missing_lab_admission_is_allowed_and_repeatable(self):
+        """Accept labs with no admission link and confirm repeated checks agree."""
         row = self.sample()
         original = deepcopy(row)
         first = validate([row], 1)
@@ -50,11 +55,13 @@ class DatasetChecks(unittest.TestCase):
         self.assertEqual(row, original)
 
     def test_count_mismatch_is_rejected(self):
+        """Catch a count column that claims more records than its history contains."""
         row = self.sample()
         row['lab_result_count'] = '2'
         self.assertTrue(any('history length' in e for e in validate([row], 1)['errors']))
 
     def test_duplicate_patient_and_changed_identity_are_rejected(self):
+        """Catch repeated patient IDs and conflicting fictional names."""
         first = self.sample()
         second = deepcopy(first)
         second['synthetic_patient_name'] = 'Changed Identity'
@@ -63,6 +70,7 @@ class DatasetChecks(unittest.TestCase):
         self.assertTrue(any('identity changed' in e for e in errors))
 
     def test_wrong_patient_encounter_is_rejected(self):
+        """Catch a diagnosis pointing outside the enclosing patient's admissions."""
         row = self.sample()
         events = json.loads(row['diagnoses_json'])
         events[0]['hadm_id'] = 99999999
@@ -70,6 +78,7 @@ class DatasetChecks(unittest.TestCase):
         self.assertTrue(any('orphan' in e for e in validate([row], 1)['errors']))
 
     def test_duplicate_lab_event_is_rejected(self):
+        """Catch the same laboratory event being counted twice."""
         row = self.sample()
         labs = json.loads(row['laboratory_results_json'])
         row['laboratory_results_json'] = json.dumps(labs * 2)
@@ -77,6 +86,7 @@ class DatasetChecks(unittest.TestCase):
         self.assertTrue(any('duplicate labevent_id' in e for e in validate([row], 1)['errors']))
 
     def test_malformed_and_non_array_json_are_rejected(self):
+        """Reject broken JSON and histories that are not lists of records."""
         for invalid in ['{broken', '{}', '[NaN]']:
             with self.subTest(invalid=invalid):
                 row = self.sample()
@@ -84,12 +94,14 @@ class DatasetChecks(unittest.TestCase):
                 self.assertTrue(any('invalid JSON' in e for e in validate([row], 1)['errors']))
 
     def test_fractional_identifier_is_rejected(self):
+        """Accept equivalent whole-number IDs and reject invalid ID values."""
         self.assertEqual(identifier(123.0), identifier('123'))
         for invalid in [123.5, True, None, float('nan')]:
             with self.subTest(invalid=invalid), self.assertRaises(ValueError):
                 identifier(invalid)
 
     def test_numeric_icd_code_is_rejected(self):
+        """Keep diagnosis codes as text so leading zeros are not lost."""
         row = self.sample()
         events = json.loads(row['diagnoses_json'])
         events[0]['icd_code'] = 7071
@@ -97,6 +109,7 @@ class DatasetChecks(unittest.TestCase):
         self.assertTrue(any('ICD code' in e for e in validate([row], 1)['errors']))
 
     def test_backwards_encounter_dates_are_rejected(self):
+        """Catch discharge dates that occur before admission."""
         row = self.sample()
         events = json.loads(row['admissions_json'])
         events[0]['dischtime'] = '1900-01-01 00:00:00'
