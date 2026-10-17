@@ -101,6 +101,11 @@ python -m unittest discover -s tests -v
 
 | File | What it helps you do |
 |---|---|
+| [Source data](data/README.md) | Find the patient CSV, its source, and its license. |
+| [Documentation](docs/README.md) | Choose a guide to the methods, findings, or field definitions. |
+| [Generated report](reports/README.md) | Understand the machine-readable results and how to regenerate them. |
+| [Python code guide](scripts/README.md) | Learn what each validation function does. |
+| [Test guide](tests/README.md) | Learn what each test checks and how to run the test suite. |
 | [Validation script](scripts/validate_dataset.py) | Read the dataset and check whether counts, IDs, and linked records agree. |
 | [Tests](tests/test_validate_dataset.py) | Try intentionally broken examples to confirm the checks catch mistakes. |
 | [Validation results](docs/validation-results.md) | Read the observed totals, missing values, and remaining limitations. |
