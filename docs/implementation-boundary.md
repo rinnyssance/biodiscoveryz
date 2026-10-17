@@ -44,17 +44,23 @@ name/code mapping.
 ## What Db2 integration needs
 
 The pasted project request says the team has populated Db2. That statement is
-recorded as a project report, not verified by this checkout. No Db2 hostname,
-authorized credentials, reachable network path, database dialect/platform, table
-list, or column mapping was supplied here. The optional TLS connection probe can
-test a connection when the team provides those settings through environment
-variables. It does not query patient data or rebuild the existing Db2 database.
+recorded as a project report, not verified by this checkout. The team has added
+[Db2 connection notes](DB2_Howto.md),
+[schema overview](DB2_SCHEMAS.md), and [encryption notes](DB2_ENCRYPTION.md).
+They name the local database, transferred tables, a dashboard table/alias, and a
+patient view. These documents are a starting point, not a verified connection or a
+complete column-level API mapping. Their `localhost` address refers to the Db2
+host; it is not reachable as `localhost` from this computer or a Vercel function.
+The optional TLS connection probe can test authorized access when the team supplies
+current settings through environment variables. It does not query patient data or
+rebuild the existing Db2 database.
 
 To connect the application to the populated tables, the backend needs:
 
 1. An authorized read-only account and network path, provided outside Git.
 2. The Db2 platform/version and TLS certificate/connection requirements.
-3. Actual schema/table/column definitions and primary/foreign keys.
+3. Current table/view column definitions, primary/foreign keys, and account
+   permissions; the overview docs list names but not a complete verified mapping.
 4. A mapping from those columns to the existing API's patient, admission, diagnosis,
    and lab response fields, including optional admission links.
 5. Read-only comparison of row counts and selected records to the development data.

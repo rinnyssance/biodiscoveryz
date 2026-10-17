@@ -135,9 +135,11 @@ stops startup with a clear error; it never substitutes SQLite records. The optio
 `python -m backend.db2_probe` uses the `ibm_db` driver and environment settings
 shown in `.env.example` to test a TLS connection to an authorized Db2 server. The
 driver is not a required dependency for local development. The probe has only been
-tested with an injected test driver because live connection details and table
-definitions are not available in this repository. It does not query clinical tables,
-alter the populated Db2 database, or establish application data integration.
+tested with an injected test driver because this machine has no authorized connection.
+The team's Db2 guides list table names and a patient view, but this machine cannot
+verify their current columns or access against a live server. The probe does not
+query clinical tables, alter the populated Db2 database, or establish application
+data integration.
 
 The documented server binds to your own computer at `127.0.0.1`. No public deployment,
 authentication, or IBM Z integration is configured. Vercel can run FastAPI, so it can
