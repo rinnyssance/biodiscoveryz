@@ -26,3 +26,14 @@ python -m unittest discover -s tests -v
 
 The small examples are edited in memory; they do not replace the source dataset.
 Passing tests supports software correctness, not clinical validity.
+
+## Database and API tests
+
+[test_backend.py](test_backend.py) imports the real dataset into temporary SQLite
+files, compares every stored clinical event, checks duplicate-free repeat imports,
+rejects changed snapshots, simulates a failed write, and exercises the patient API.
+
+Install `requirements-dev.txt`, then run `python -m pytest -q` from the repository
+root to run both suites: 30 tests total. Temporary test databases are separate from
+the database used by the running application. The [backend guide](../backend/README.md)
+explains the environment setup. `pytest.ini` points pytest at this folder.

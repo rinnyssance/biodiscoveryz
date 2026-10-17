@@ -19,7 +19,7 @@ identifiers, ICD strings, and shifted dates. Byte preservation is verified by SH
 a fingerprint of the file's contents. This does not establish equivalence with the
 unavailable original clinical source tables.
 
-## What this milestone implements
+## Initial CSV-validation milestone
 
 The dataset was committed and pushed first in commit `621be13`. The validation code
 was added afterward. This is a small Python data-ingestion and validation milestone;
@@ -49,7 +49,7 @@ Admission IDs are globally unique in this artifact; diagnoses and linked labs mu
 match the enclosing patient's admission set. The validator checks these relationships
 directly instead of performing joins that could accidentally multiply rows.
 
-## How to reproduce the checks
+## How to reproduce the CSV checks
 
 Run these commands from the repository root:
 
@@ -83,3 +83,17 @@ validation. The complete dataset includes patients beyond the preliminary screen
 
 Missing measurements remain missing. No diagnosis is inferred from a lab result.
 This is an educational/research demonstration, not a system for patient care.
+
+## Local database and API milestone
+
+The next milestone adds FastAPI, Pydantic, SQLAlchemy, SQLite, Uvicorn, and pytest.
+The importer reuses the validation above, copies histories into separate tables,
+and verifies the saved totals in one transaction. A repeated import of the same
+snapshot adds no rows; a different snapshot is rejected. Numeric encounter IDs become
+integer links and empty death dates become database NULL. Clinical values, code
+strings, and shifted timestamps are preserved. All original clinical records were
+compared with the stored tables in the backend tests.
+
+The API exposes health and patient-directory routes with bounded pages. See the
+[backend guide](../backend/README.md) for commands, file purposes, import behavior,
+and the distinction between local SQLite storage and future hosting.

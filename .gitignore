@@ -1,3 +1,10 @@
 # Keep Python-generated cache folders and compiled files out of the repository.
 __pycache__/
 *.pyc
+# Local Python environment, test cache, and generated database files.
+.venv/
+.pytest_cache/
+var/
+*.sqlite
+*.sqlite-journal
+.env

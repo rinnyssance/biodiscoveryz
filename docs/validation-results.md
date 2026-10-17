@@ -34,5 +34,5 @@ damaged examples to check that failures are detected rather than silently accept
 The original 27,314,683-byte CSV retains SHA-256
 `8aef08b9850a4b0ab0cb74c704b929dad970fe9e9a6b81b2a7195d97815f1bbd`.
 Source-table equivalence, future identity stability, and clinical validity are not
-established by these checks. No relational database import or clinical cohort
-validation was implemented in this milestone.
+established by these checks. This initial report covers CSV validation. The later [backend milestone](../backend/README.md)
+adds a relational import and API; it does not establish clinical cohort validity.

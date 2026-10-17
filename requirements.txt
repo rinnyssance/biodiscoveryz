@@ -1,0 +1,5 @@
+# Packages used by the local Python API and database importer.
+fastapi==0.143.3
+pydantic==2.14.1
+SQLAlchemy==2.0.55
+uvicorn==0.54.0

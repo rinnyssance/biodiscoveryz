@@ -74,9 +74,15 @@ snapshot; stability across future imports has not yet been tested.
 histories, and added a reproducible Python ingestion/validation script. Checks cover
 counts, duplicate IDs, missing values, data types, encounter relationships, and date
 ordering. The file contains **275 admissions, 4,506 diagnoses, and 107,727 lab events**;
-28,420 labs legitimately have no admission ID. All implemented checks and 10 tests
-pass. The 59 positive preliminary neurological screening flags are not a validated
+28,420 labs legitimately have no admission ID. The original validator passes its 10 tests. The 59 positive preliminary neurological screening flags are not a validated
 cohort; all 100 patient validation flags remain false. No new diagnoses are inferred.
+
+**Local backend:** The CSV now imports into separate SQLite tables for patients,
+admissions, diagnoses, and lab events. Repeat imports do not add duplicates. FastAPI
+provides `/health` and a searchable, paginated `/api/patients` endpoint. The complete
+suite contains 30 passing tests, including full source-to-database comparisons and
+rollback checks. Follow the [backend setup guide](backend/README.md) to install the
+packages, import the dataset, and run the server locally.
 
 **Run the data checks from the repository root:**
 
@@ -87,6 +93,7 @@ python -m unittest discover -s tests -v
 
 | Guide | What it helps you do |
 |---|---|
+| [Local backend](backend/README.md) | Set up the database, import records, and try the API. |
 | [Source data](data/README.md) | Find the patient CSV, source attribution, and license. |
 | [Python code](scripts/README.md) | Understand the validation script and each function. |
 | [Tests](tests/README.md) | See what each test checks and how to run the suite. |
@@ -156,27 +163,30 @@ Peer-reviewed literature, official technical documentation, healthcare standards
 
 ## 🛠️ Technology Stack
 
-The current Python implementation handles dataset ingestion, validation, and reporting
-through a command-line script. A web API server, database layer, and application
-endpoints have not been implemented yet.
+The current implementation supports dataset validation, relational import, and a local read-only API.
 
 | Component | Implemented tools and purpose |
 |---|---|
 | Python runtime | Python 3.10.11, used to run and test this milestone |
-| Data ingestion | Built-in `csv` and `json` modules to read patient rows and nested histories |
-| Data validation | `collections`, `datetime`, and `math` to check counts, dates, IDs, and numeric values |
-| File verification | `hashlib` to check the source file's fingerprint |
-| Files and command-line options | `pathlib` and `argparse` to locate inputs and choose report destinations |
-| Automated tests | Built-in `unittest` to check the dataset and intentionally broken examples |
+| Data ingestion and validation | Built-in `csv`, `json`, `collections`, `datetime`, `math`, `hashlib`, `pathlib`, and `argparse` |
+| API routes | FastAPI for health checks and a searchable patient directory |
+| Response formats | Pydantic for typed JSON patient summaries and pagination |
+| Database access | SQLAlchemy for table definitions, queries, and atomic imports |
+| Local database | SQLite for patient, admission, diagnosis, and laboratory tables |
+| Local server | Uvicorn, bound to `127.0.0.1` |
+| Automated tests | pytest for the combined suite, existing `unittest` checks, and HTTPX through the API test client |
 | Version control | Git and GitHub to track and share the work |
 | Documentation and reports | Markdown for explanations; JSON for machine-readable findings |
 
-No third-party Python packages are required for the current checks. The tools used
-to prepare the original CSV are not established by repository evidence.
+[requirements.txt](requirements.txt) pins the backend libraries;
+[requirements-dev.txt](requirements-dev.txt) adds the test tools. The standalone CSV
+validator still uses only Python's standard library. The original CSV preparation
+tools are not established by repository evidence.
 
-**Proposed additions:** Python 3.11+, FastAPI, Pydantic, SQLAlchemy, SQLite, and pytest.
-Pandas is an optional ingestion choice; PostgreSQL is a possible later migration.
-These are plans, not installed or implemented components of this milestone.
+**Future options:** A newer Python runtime, PostgreSQL for hosted persistent storage,
+and pandas if later analysis needs it. These are not implemented or tested deployment
+components. Local setup and hosting limits are explained in the [backend guide](backend/README.md).
+
 
 ---
 
