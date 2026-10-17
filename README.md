@@ -50,9 +50,7 @@ BioDiscovery Z brings together scientific research, healthcare compliance, cyber
 
 ### 🧬 Erin — Science and Data Lead
 
-Erin leads dataset preparation, scientific methodology, clinical data organization,
-data quality, reproducible analysis, neurological screening methods, and clear
-communication of findings and limitations.
+Erin leads the scientific methods and data work behind the project.
 
 **Responsibilities:**
 
@@ -72,25 +70,13 @@ here to reproduce those joins. Each patient row stores admissions, diagnoses, an
 laboratory histories as JSON lists. Patient and demonstration IDs are unique in this
 snapshot; stability across future imports has not yet been tested.
 
-**Completed in this milestone:** Published the unchanged CSV, read all nested
+**Completed in this milestone:** Added the patient dataset, read all nested
 histories, and added a reproducible Python ingestion/validation script. Checks cover
 counts, duplicate IDs, missing values, data types, encounter relationships, and date
 ordering. The file contains **275 admissions, 4,506 diagnoses, and 107,727 lab events**;
 28,420 labs legitimately have no admission ID. All implemented checks and 10 tests
 pass. The 59 positive preliminary neurological screening flags are not a validated
 cohort; all 100 patient validation flags remain false. No new diagnoses are inferred.
-
-**Erin's current implemented stack:** Python standard-library CSV/JSON ingestion and
-validation (`csv`, `json`, `collections`, `datetime`, `hashlib`, `math`, `pathlib`,
-`argparse`), `unittest` for tests, Git/GitHub for version control, and Markdown/JSON
-for methods and validation reports. This milestone was tested on **Python 3.10.11**.
-The tools used to prepare the original CSV are not established by repository evidence.
-
-**Planned, not implemented:** The supplied project notes propose Python 3.11+,
-FastAPI, Pydantic, SQLAlchemy, SQLite, and pytest; pandas is an optional ingestion
-choice and PostgreSQL is a possible later migration. This milestone implements no
-API, relational database import, or clinically validated ICD cohort. These tools and
-methods are not claimed as completed work.
 
 **Run the data checks from the repository root:**
 
@@ -99,24 +85,18 @@ python scripts/validate_dataset.py
 python -m unittest discover -s tests -v
 ```
 
-| File | What it helps you do |
+| Guide | What it helps you do |
 |---|---|
-| [Source data](data/README.md) | Find the patient CSV, its source, and its license. |
-| [Documentation](docs/README.md) | Choose a guide to the methods, findings, or field definitions. |
-| [Generated report](reports/README.md) | Understand the machine-readable results and how to regenerate them. |
-| [Python code guide](scripts/README.md) | Learn what each validation function does. |
-| [Test guide](tests/README.md) | Learn what each test checks and how to run the test suite. |
-| [Validation script](scripts/validate_dataset.py) | Read the dataset and check whether counts, IDs, and linked records agree. |
-| [Tests](tests/test_validate_dataset.py) | Try intentionally broken examples to confirm the checks catch mistakes. |
-| [Validation results](docs/validation-results.md) | Read the observed totals, missing values, and remaining limitations. |
-| [Materials and methods](docs/materials-and-methods.md) | Follow the analysis steps and understand why each check matters. |
-| [Data dictionary](docs/data-dictionary.md) | Look up what each field means. |
-| [Dataset attribution and license](data/README.md) | Find the source citation and terms for using the dataset. |
+| [Source data](data/README.md) | Find the patient CSV, source attribution, and license. |
+| [Python code](scripts/README.md) | Understand the validation script and each function. |
+| [Tests](tests/README.md) | See what each test checks and how to run the suite. |
+| [Validation results](docs/validation-results.md) | Read dataset totals, missing values, and limitations. |
+| [Materials and methods](docs/materials-and-methods.md) | Follow the preparation and validation workflow. |
+| [Data dictionary](docs/data-dictionary.md) | Look up the meaning of each field. |
+| [Generated report](reports/README.md) | Interpret the JSON results and regenerate them. |
 
-Source: Johnson et al. (2023), *MIMIC-IV Clinical Database Demo (version 2.2)*,
-PhysioNet, [doi:10.13026/dp1f-ex47](https://doi.org/10.13026/dp1f-ex47).
 Clinical source-value equivalence has not been independently verified against the
-original tables. This is research and educational work, not a tool for patient care.
+original tables. See [Research References](#-research-references) for the dataset citation.
 
 ### 🔐 Ronin — IBM Z Security Lead
 
@@ -174,20 +154,29 @@ Peer-reviewed literature, official technical documentation, healthcare standards
 
 ---
 
-## 🛠️ Proposed Technology Stack
+## 🛠️ Technology Stack
 
-| Component | Proposed Technologies |
+The current Python implementation handles dataset ingestion, validation, and reporting
+through a command-line script. A web API server, database layer, and application
+endpoints have not been implemented yet.
+
+| Component | Implemented tools and purpose |
 |---|---|
-| Programming and analysis | Python |
-| Data processing | Pandas, NumPy |
-| Data visualization | Matplotlib, Seaborn, Plotly |
-| Application interface | To be determined during development |
-| Healthcare interoperability | HL7 FHIR concepts |
-| Secure computing | IBM Z / LinuxONE capabilities |
-| Version control | Git and GitHub |
-| Research documentation | Markdown, scientific literature, technical documentation |
+| Python runtime | Python 3.10.11, used to run and test this milestone |
+| Data ingestion | Built-in `csv` and `json` modules to read patient rows and nested histories |
+| Data validation | `collections`, `datetime`, and `math` to check counts, dates, IDs, and numeric values |
+| File verification | `hashlib` to check the source file's fingerprint |
+| Files and command-line options | `pathlib` and `argparse` to locate inputs and choose report destinations |
+| Automated tests | Built-in `unittest` to check the dataset and intentionally broken examples |
+| Version control | Git and GitHub to track and share the work |
+| Documentation and reports | Markdown for explanations; JSON for machine-readable findings |
 
-The final stack will depend on available development resources and IBM Z integration options.
+No third-party Python packages are required for the current checks. The tools used
+to prepare the original CSV are not established by repository evidence.
+
+**Proposed additions:** Python 3.11+, FastAPI, Pydantic, SQLAlchemy, SQLite, and pytest.
+Pandas is an optional ingestion choice; PostgreSQL is a possible later migration.
+These are plans, not installed or implemented components of this milestone.
 
 ---
 
@@ -315,7 +304,11 @@ By combining biological and healthcare research with data science, cybersecurity
 
 ## 📖 Research References
 
-Research sources and technical documentation will be added as the project develops.
+Johnson, A., Bulgarelli, L., Pollard, T., Horng, S., Celi, L. A., & Mark, R. (2023).
+*MIMIC-IV Clinical Database Demo (version 2.2).* PhysioNet.
+[Dataset DOI](https://doi.org/10.13026/dp1f-ex47).
+
+See [dataset attribution](data/README.md) for the license and additional source citation.
 
 ---
 
