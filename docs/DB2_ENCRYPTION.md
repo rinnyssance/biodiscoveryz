@@ -6,7 +6,7 @@ This document details the encryption implementation for the `SYNTHETIC_PATIENT_N
 
 ## 1. Overview & Security Context
 
-In healthcare analytics and Datathon workflows, protecting Personally Identifiable Information (PII) is critical. Although patient names in this cohort are synthetic, encrypting the column demonstrates compliance with healthcare data protection standards (e.g., HIPAA Security Rule, GDPR pseudonymization).
+In healthcare analytics and Datathon workflows, protecting Personally Identifiable Information (PII) is critical. Although patient names in this cohort are synthetic, encrypting the column demonstrates a database encryption feature. It does not establish compliance with any healthcare privacy or security law.
 
 | Attribute | Details |
 |---|---|
@@ -15,7 +15,7 @@ In healthcare analytics and Datathon workflows, protecting Personally Identifiab
 | **Encrypted Column** | `SYNTHETIC_PATIENT_NAME` |
 | **Storage Type** | `VARCHAR(255) FOR BIT DATA` (Binary Ciphertext) |
 | **Encryption Type** | Db2 Built-in Symmetric Block Encryption (`ENCRYPT`) |
-| **Passphrase** | `BioDiscoveryZ@Datathon2026!` |
+| **Passphrase** | <PASSPHRASE_FROM_SECRET_MANAGER> |
 
 ---
 
@@ -33,14 +33,14 @@ CALL SYSPROC.ADMIN_CMD('REORG TABLE DB2INST1.BIODISCOVERY_Z_PATIENTS');
 ```
 
 ### Step 2: Encrypt Existing Patient Names
-Each plaintext name was encrypted in place using the encryption passphrase:
+The following statement illustrates the encryption step documented by the team; it is not an instruction to rerun it. Its actual execution has not been verified in this checkout:
 ```sql
 UPDATE BIODISCOVERY_Z_PATIENTS 
 SET SYNTHETIC_PATIENT_NAME = ENCRYPT(SYNTHETIC_PATIENT_NAME, 'BioDiscoveryZ@Datathon2026!');
 ```
 
 ### Step 3: Create Secure Decrypted View
-An authorized view was created to simplify decrypted reads for credentialed workflows:
+The team documents the following view definition for credentialed reads. Its presence and permissions have not been verified in this checkout:
 ```sql
 CREATE OR REPLACE VIEW DB2INST1.V_PATIENTS_DECRYPTED AS 
 SELECT 
@@ -120,45 +120,11 @@ FETCH FIRST 3 ROWS ONLY;
 ## 4. Python & Jupyter Notebook Integration
 
 ### Querying Decrypted Records in Python
-```python
-import ibm_db
-import ibm_db_dbi
-import pandas as pd
 
-# Connect locally on the host machine
-conn_str = (
-    "DATABASE=DBPROD;"
-    "HOSTNAME=127.0.0.1;"
-    "PORT=50000;"
-    "PROTOCOL=TCPIP;"
-    "UID=db2inst1;"
-    "PWD=ibmzsadb;"
-)
-
-conn = ibm_db.connect(conn_str, "", "")
-pconn = ibm_db_dbi.Connection(conn)
-
-# Passphrase can be supplied as a dynamic SQL parameter or retrieved from an environment variable
-PASSPHRASE = "BioDiscoveryZ@Datathon2026!"
-
-sql = f"""
-SELECT 
-    SUBJECT_ID,
-    DEMO_PATIENT_ID,
-    DECRYPT_CHAR(SYNTHETIC_PATIENT_NAME, '{PASSPHRASE}') AS SYNTHETIC_PATIENT_NAME,
-    GENDER,
-    ANCHOR_AGE,
-    SIMULATED_HOSPITAL
-FROM BIODISCOVERY_Z_PATIENTS
-ORDER BY SUBJECT_ID
-FETCH FIRST 5 ROWS ONLY
-"""
-
-df = pd.read_sql(sql, pconn)
-print(df)
-
-pconn.close()
-```
+Application code must not embed a passphrase or interpolate it into SQL text.
+Use a team-approved read-only view or a parameterized query and retrieve the
+passphrase from an authorized secret manager at runtime. The backend does not
+query this view yet; access and its actual columns must be verified first.
 
 ---
 

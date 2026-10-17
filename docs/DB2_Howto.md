@@ -4,13 +4,13 @@ This guide describes how to connect to and run SQL queries against the **IBM Db2
 
 > [!IMPORTANT]
 > **Internal Network Security:**
-> All database access is restricted strictly to local internal communication (`localhost` / `127.0.0.1` on port `50000`). Db2 is not exposed to the public internet.
+> The documented Db2 endpoint is local to the database host (`localhost` / `127.0.0.1` on port `50000`). This does not make it reachable from a separate backend host. Verify the actual network and TLS settings before application integration.
 
 ---
 
 ## 1. Connection Parameters
 
-All local tools, scripts, and notebook kernels connect using the following parameters:
+These are host-local examples. Application code must use an authorized read-only account and runtime secrets. The placeholders below are not working credentials:
 
 | Parameter | Value | Notes |
 |---|---|---|
@@ -18,7 +18,7 @@ All local tools, scripts, and notebook kernels connect using the following param
 | **Port** | `50000` | Local Db2 engine port |
 | **Database Name** | `DBPROD` | Production database containing all 32 PhysioNet datasets |
 | **Username** | `db2inst1` | Db2 instance administrator |
-| **Password** | `ibmzsadb` | Instance password |
+| **Password** | <PASSWORD_FROM_SECURE_ENVIRONMENT> | Instance password |
 | **Default Schema** | `DB2INST1` | Holds all clinical tables |
 
 ---
@@ -33,6 +33,7 @@ This method lets you write standard SQL queries directly inside notebook cells.
 
 #### Cell 1: Initialize SQL Extension & Engine
 ```python
+import os
 import sqlalchemy
 from sqlalchemy import create_engine
 
@@ -77,6 +78,7 @@ df_seniors.head()
 Load SQL query results directly into Pandas DataFrames for plotting, statistics, or ML:
 
 ```python
+import os
 import pandas as pd
 from sqlalchemy import create_engine
 
@@ -124,12 +126,13 @@ display(df_cohort.head())
 For parameterized queries or explicit transaction management:
 
 ```python
+import os
 import ibm_db
 import ibm_db_dbi
 import pandas as pd
 
 conn_str = "DATABASE=DBPROD;HOSTNAME=127.0.0.1;PORT=50000;PROTOCOL=TCPIP;UID=db2inst1;PWD=ibmzsadb;"
-conn = ibm_db.connect(conn_str, "", "")
+conn = ibm_db.connect(conn_str, os.environ["BDZ_DB2_USERNAME"], os.environ["BDZ_DB2_PASSWORD"])
 pconn = ibm_db_dbi.Connection(conn)
 
 cursor = pconn.cursor()
@@ -193,6 +196,7 @@ Run a standalone Python script on the host machine connecting to `127.0.0.1:5000
 
 ```python
 #!/usr/bin/env python3
+import os
 import ibm_db
 
 conn_str = (
@@ -205,7 +209,7 @@ conn_str = (
 )
 
 try:
-    conn = ibm_db.connect(conn_str, "", "")
+    conn = ibm_db.connect(conn_str, os.environ["BDZ_DB2_USERNAME"], os.environ["BDZ_DB2_PASSWORD"])
     print("Connected to Db2 locally via 127.0.0.1:50000!")
 
     sql = "SELECT COUNT(*) FROM PATIENTS"
