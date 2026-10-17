@@ -244,7 +244,8 @@ def main():
     report['source_sha256'] = before
     report['source_bytes'] = args.input.stat().st_size
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+    # Use the same line endings on Windows and Linux so reports compare cleanly.
+    args.output.write_bytes((json.dumps(report, indent=2, sort_keys=True) + '\n').encode('utf-8'))
     print(json.dumps({key: report[key] for key in ['status', 'errors', 'source_sha256']}))
     return 0 if report['status'] == 'pass' else 1
 
