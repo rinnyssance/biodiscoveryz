@@ -50,60 +50,36 @@ BioDiscovery Z brings together scientific research, healthcare compliance, cyber
 
 ### 🧬 Erin — Science and Data Lead
 
-Erin leads the scientific methods and data work behind the project.
+Erin leads dataset preparation, scientific methodology, clinical data organization,
+data quality, reproducible analysis, neurological screening methods, and documentation
+of findings and limitations.
 
-**Responsibilities:**
+**Dataset and method:** Erin supplied a [CSV of 100 patients](data/raw/BioDiscovery_Z_all_100_patients_synthetic_dashboard.csv)
+attributed to MIMIC-IV Clinical Database Demo v2.2. It has one row per patient with
+admission, diagnosis, and laboratory histories stored as JSON arrays. Project notes
+identify `patients`, `admissions`, `diagnoses_icd`, `d_icd_diagnoses`, and `labevents`
+as selected source tables; their original extraction and joins cannot be reproduced
+from the files in this repository. The clinical records are deidentified, while names
+are fictional and hospital/department assignments are explicitly simulated. Source
+clinical values, identifiers, ICD codes, and shifted dates remain in the original CSV.
 
-- Select and document research datasets and their scientific context.
-- Prepare patient-level data while preserving clinical values and shifted dates.
-- Check identifiers, missing values, history counts, and patient/encounter relationships.
-- Develop transparent, reproducible analysis and preliminary neurological screening methods.
-- Document evidence, uncertainty, and the limits of the available data.
+**Completed work:** Erin published the CSV and a reproducible Python validator that
+parses every nested history and checks unique IDs, fictional identities within this
+snapshot, missing values, data types, declared counts, date order, and patient/encounter
+links. The validated file contains **100 patients, 275 admissions, 4,506 diagnoses,
+and 107,727 lab events**; 28,420 labs legitimately have no admission ID. A separate,
+repeatable importer organizes these records into related SQLite tables. The local
+FastAPI backend provides patient search, detail and paginated histories, descriptive
+summaries, and a FHIR R4 Patient example. The combined suite passed **63 tests and
+7 subtests**; all 100 Patient examples passed the official R4 JSON schema.
 
-**Prepared dataset:** The supplied [CSV](data/raw/BioDiscovery_Z_all_100_patients_synthetic_dashboard.csv)
-contains 100 deidentified patients from MIMIC-IV Clinical Database Demo v2.2, with
-fictional names and explicitly simulated hospital/department assignments. It is not
-an entirely synthetic clinical dataset. Project notes identify `patients`,
-`admissions`, `diagnoses_icd`, `d_icd_diagnoses`, and `labevents` as the five selected
-source tables; the original preparation script and source tables are not available
-here to reproduce those joins. Each patient row stores admissions, diagnoses, and
-laboratory histories as JSON lists. Patient and demonstration IDs are unique in this
-snapshot; stability across future imports has not yet been tested.
-
-**Completed in this milestone:** Added the patient dataset, read all nested
-histories, and added a reproducible Python ingestion/validation script. Checks cover
-counts, duplicate IDs, missing values, data types, encounter relationships, and date
-ordering. The file contains **275 admissions, 4,506 diagnoses, and 107,727 lab events**;
-28,420 labs legitimately have no admission ID. The original validator passes its 10 tests. The 59 positive preliminary neurological screening flags are not a validated
-cohort; all 100 patient validation flags remain false. No new diagnoses are inferred.
-
-**Local backend:** The CSV imports into separate SQLite tables for patients,
-admissions, diagnoses, and lab events. FastAPI serves patient search, individual
-records, paginated histories, supported dataset summaries, and a FHIR R4 Patient
-example. Repeat imports do not add duplicates. See the [backend setup guide](backend/README.md)
-for commands and the [integration boundary](docs/implementation-boundary.md) for
-what still needs the frontend and Db2 schema.
-
-**Run the data checks from the repository root:**
-
-```sh
-python scripts/validate_dataset.py
-python -m unittest discover -s tests -v
-```
-
-| Guide | What it helps you do |
-|---|---|
-| [Local backend](backend/README.md) | Set up the database, import records, and try the API. |
-| [Source data](data/README.md) | Find the patient CSV, source attribution, and license. |
-| [Python code](scripts/README.md) | Understand the validation script and each function. |
-| [Tests](tests/README.md) | See what each test checks and how to run the suite. |
-| [Validation results](docs/validation-results.md) | Read dataset totals, missing values, and limitations. |
-| [Materials and methods](docs/materials-and-methods.md) | Follow the preparation and validation workflow. |
-| [Data dictionary](docs/data-dictionary.md) | Look up the meaning of each field. |
-| [Generated report](reports/README.md) | Interpret the JSON results and regenerate them. |
-
-Clinical source-value equivalence has not been independently verified against the
-original tables. See [Research References](#-research-references) for the dataset citation.
+**Limits:** The 59 positive neurological screening flags are preliminary; no
+validated cohort or new diagnosis is established. Checks against the supplied CSV do
+not independently verify it against the unavailable source tables, and fictional
+identity stability across future exports has not been tested. The [methods](docs/materials-and-methods.md),
+[validation findings](docs/validation-results.md), [backend verification](docs/backend-verification.md),
+and [local setup guide](backend/README.md) explain the checks and how to repeat them.
+The project-wide Technology Stack section below lists the tools used.
 
 ### 🔐 Ronin — IBM Z Security Lead
 
