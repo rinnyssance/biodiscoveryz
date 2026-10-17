@@ -1,0 +1,157 @@
+{
+  "errors": [],
+  "history_counts": {
+    "admissions_json": 275,
+    "diagnoses_json": 4506,
+    "laboratory_results_json": 107727
+  },
+  "labs_without_admission": 28420,
+  "limitations": [
+    "Checks establish internal consistency, not clinical validation.",
+    "Original source tables and preparation code were not supplied; source-value equivalence is unverified.",
+    "One snapshot cannot establish identity stability across future imports.",
+    "Neurological screening rules have not been independently established or clinically validated.",
+    "Missing values are reported, not filled in. Shifted dates are never converted to real-world dates."
+  ],
+  "missing_values": {
+    "admissions_json.admission_location": 0,
+    "admissions_json.admission_type": 0,
+    "admissions_json.admittime": 0,
+    "admissions_json.discharge_location": 42,
+    "admissions_json.dischtime": 0,
+    "admissions_json.hadm_id": 0,
+    "admissions_json.hospital_expire_flag": 0,
+    "diagnoses_json.hadm_id": 0,
+    "diagnoses_json.icd_code": 0,
+    "diagnoses_json.icd_version": 0,
+    "diagnoses_json.long_title": 0,
+    "diagnoses_json.neurology_icd_chapter_screen": 0,
+    "diagnoses_json.seq_num": 0,
+    "laboratory_results_json.charttime": 0,
+    "laboratory_results_json.flag": 67452,
+    "laboratory_results_json.hadm_id": 28420,
+    "laboratory_results_json.itemid": 0,
+    "laboratory_results_json.labevent_id": 0,
+    "laboratory_results_json.ref_range_lower": 18728,
+    "laboratory_results_json.ref_range_upper": 18728,
+    "laboratory_results_json.value": 9588,
+    "laboratory_results_json.valuenum": 12481,
+    "laboratory_results_json.valueuom": 16542,
+    "patient.admission_count": 0,
+    "patient.admissions_json": 0,
+    "patient.anchor_age": 0,
+    "patient.anchor_year": 0,
+    "patient.anchor_year_group": 0,
+    "patient.data_source": 0,
+    "patient.data_source_url": 0,
+    "patient.demo_patient_id": 0,
+    "patient.department_assignment_simulated": 0,
+    "patient.diagnoses_json": 0,
+    "patient.diagnosis_count": 0,
+    "patient.dod": 69,
+    "patient.gender": 0,
+    "patient.hospital_assignment_simulated": 0,
+    "patient.lab_result_count": 0,
+    "patient.laboratory_results_json": 0,
+    "patient.neurology_preliminary_screen": 0,
+    "patient.neurology_screen_validated": 0,
+    "patient.simulated_department": 0,
+    "patient.simulated_hospital": 0,
+    "patient.subject_id": 0,
+    "patient.synthetic_identity": 0,
+    "patient.synthetic_patient_name": 0
+  },
+  "nested_value_types": {
+    "admissions_json.admission_location": {
+      "str": 275
+    },
+    "admissions_json.admission_type": {
+      "str": 275
+    },
+    "admissions_json.admittime": {
+      "str": 275
+    },
+    "admissions_json.discharge_location": {
+      "NoneType": 42,
+      "str": 233
+    },
+    "admissions_json.dischtime": {
+      "str": 275
+    },
+    "admissions_json.hadm_id": {
+      "int": 275
+    },
+    "admissions_json.hospital_expire_flag": {
+      "int": 275
+    },
+    "diagnoses_json.hadm_id": {
+      "int": 4506
+    },
+    "diagnoses_json.icd_code": {
+      "str": 4506
+    },
+    "diagnoses_json.icd_version": {
+      "int": 4506
+    },
+    "diagnoses_json.long_title": {
+      "str": 4506
+    },
+    "diagnoses_json.neurology_icd_chapter_screen": {
+      "bool": 4506
+    },
+    "diagnoses_json.seq_num": {
+      "int": 4506
+    },
+    "laboratory_results_json.charttime": {
+      "str": 107727
+    },
+    "laboratory_results_json.flag": {
+      "NoneType": 67452,
+      "str": 40275
+    },
+    "laboratory_results_json.hadm_id": {
+      "NoneType": 28420,
+      "float": 79307
+    },
+    "laboratory_results_json.itemid": {
+      "int": 107727
+    },
+    "laboratory_results_json.labevent_id": {
+      "int": 107727
+    },
+    "laboratory_results_json.ref_range_lower": {
+      "NoneType": 18728,
+      "float": 88999
+    },
+    "laboratory_results_json.ref_range_upper": {
+      "NoneType": 18728,
+      "float": 88999
+    },
+    "laboratory_results_json.value": {
+      "NoneType": 9588,
+      "str": 98139
+    },
+    "laboratory_results_json.valuenum": {
+      "NoneType": 12481,
+      "float": 95246
+    },
+    "laboratory_results_json.valueuom": {
+      "NoneType": 16542,
+      "str": 91185
+    }
+  },
+  "patient_rows": 100,
+  "screening_flags": {
+    "neurology_preliminary_screen.False": 41,
+    "neurology_preliminary_screen.True": 59,
+    "neurology_screen_validated.False": 100
+  },
+  "source_bytes": 27314683,
+  "source_sha256": "8aef08b9850a4b0ab0cb74c704b929dad970fe9e9a6b81b2a7195d97815f1bbd",
+  "status": "pass",
+  "unique_admission_ids": 275,
+  "unique_demo_patient_ids": 100,
+  "unique_fictional_names": 100,
+  "unique_lab_event_ids": 107727,
+  "unique_subject_ids": 100
+}

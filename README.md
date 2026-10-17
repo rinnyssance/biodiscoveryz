@@ -48,18 +48,70 @@ The application is intended as a research and educational prototype, not a clini
 
 BioDiscovery Z brings together scientific research, healthcare compliance, cybersecurity, and user-centered design.
 
-### 🧬 Erin Moore — Project Lead & Health Data Lead
+### 🧬 Erin — Science and Data Lead
 
-Erin coordinates the project's scientific direction, research methodology, and overall development strategy.
+Erin leads dataset preparation, scientific methodology, clinical data organization,
+data quality, reproducible analysis, neurological screening methods, and clear
+communication of findings and limitations.
 
 **Responsibilities:**
 
-- Define the research questions and project objectives.
-- Identify and evaluate publicly available healthcare datasets.
-- Lead exploratory data analysis and interpretation of findings.
-- Coordinate the team's research contributions and technical development.
-- Oversee the scientific accuracy of the final presentation and research paper.
-- Ensure the project communicates its limitations and real-world healthcare relevance.
+- Select and document research datasets and their scientific context.
+- Prepare patient-level data while preserving clinical values and shifted dates.
+- Check identifiers, missing values, history counts, and patient/encounter relationships.
+- Develop transparent, reproducible analysis and preliminary neurological screening methods.
+- Document evidence, uncertainty, and the limits of the available data.
+
+**Prepared dataset:** The supplied [CSV](data/raw/BioDiscovery_Z_all_100_patients_synthetic_dashboard.csv)
+contains 100 deidentified patients from MIMIC-IV Clinical Database Demo v2.2, with
+fictional names and explicitly simulated hospital/department assignments. It is not
+an entirely synthetic clinical dataset. Project notes identify `patients`,
+`admissions`, `diagnoses_icd`, `d_icd_diagnoses`, and `labevents` as the five selected
+source tables; the original preparation script and source tables are not available
+here to reproduce those joins. Each patient row stores admissions, diagnoses, and
+laboratory histories as JSON lists. Patient and demonstration IDs are unique in this
+snapshot; stability across future imports has not yet been tested.
+
+**Completed in this milestone:** Published the unchanged CSV, read all nested
+histories, and added a reproducible Python ingestion/validation script. Checks cover
+counts, duplicate IDs, missing values, data types, encounter relationships, and date
+ordering. The file contains **275 admissions, 4,506 diagnoses, and 107,727 lab events**;
+28,420 labs legitimately have no admission ID. All implemented checks and 10 tests
+pass. The 59 positive preliminary neurological screening flags are not a validated
+cohort; all 100 patient validation flags remain false. No new diagnoses are inferred.
+
+**Erin's current implemented stack:** Python standard-library CSV/JSON ingestion and
+validation (`csv`, `json`, `collections`, `datetime`, `hashlib`, `math`, `pathlib`,
+`argparse`), `unittest` for tests, Git/GitHub for version control, and Markdown/JSON
+for methods and validation reports. This milestone was tested on **Python 3.10.11**.
+The tools used to prepare the original CSV are not established by repository evidence.
+
+**Planned, not implemented:** The supplied project notes propose Python 3.11+,
+FastAPI, Pydantic, SQLAlchemy, SQLite, and pytest; pandas is an optional ingestion
+choice and PostgreSQL is a possible later migration. This milestone implements no
+API, relational database import, or clinically validated ICD cohort. These tools and
+methods are not claimed as completed work.
+
+**Run the data checks from the repository root:**
+
+```sh
+python scripts/validate_dataset.py
+python -m unittest discover -s tests -v
+```
+
+| File | What it helps you do |
+|---|---|
+| [Validation script](scripts/validate_dataset.py) | Read the dataset and check whether counts, IDs, and linked records agree. |
+| [Tests](tests/test_validate_dataset.py) | Try intentionally broken examples to confirm the checks catch mistakes. |
+| [Validation results](docs/validation-results.md) | Read the observed totals, missing values, and remaining limitations. |
+| [Materials and methods](docs/materials-and-methods.md) | Follow the analysis steps and understand why each check matters. |
+| [Data dictionary](docs/data-dictionary.md) | Look up what each field means. |
+| [Dataset attribution and license](data/README.md) | Find the source citation and terms for using the dataset. |
+
+Source: Johnson et al. (2023), *MIMIC-IV Clinical Database Demo (version 2.2)*,
+PhysioNet, [doi:10.13026/dp1f-ex47](https://doi.org/10.13026/dp1f-ex47).
+Clinical source-value equivalence has not been independently verified against the
+original tables. This is research and educational work, not a tool for patient care.
 
 ### 🔐 Ronin — IBM Z Security Lead
 
@@ -247,7 +299,7 @@ By combining biological and healthcare research with data science, cybersecurity
 **Track:** Track 3 — Wildcard: Beyond the Obvious
 
 **Team Members:**
-- Erin Moore — Project Lead & Health Data Lead
+- Erin — Science and Data Lead
 - Ronin — IBM Z Security Lead
 - Maci — UX/UI Lead
 - Gio — Healthcare Compliance Research Analyst
