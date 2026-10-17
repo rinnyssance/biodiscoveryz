@@ -1,5 +1,7 @@
 # Data dictionary
 
+Use this guide to look up a field before reading its values or using it in code.
+
 Each CSV row represents a patient. Empty CSV values and JSON `null` values are
 reported as missing. Their meaning depends on the field; they are not replaced by zero.
 
