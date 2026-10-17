@@ -1,5 +1,7 @@
 # Dataset validation findings
 
+Use this summary to see what the dataset contains and which data-quality checks passed.
+
 The complete supplied CSV passed the implemented internal-consistency checks.
 The machine-readable results are in [dataset-validation.json](../reports/dataset-validation.json).
 
