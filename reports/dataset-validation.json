@@ -141,6 +141,7 @@
     }
   },
   "patient_rows": 100,
+  "report_description": "Patient counts, missing values, identifier checks, and encounter links for the BioDiscovery Z demo dataset.",
   "screening_flags": {
     "neurology_preliminary_screen.False": 41,
     "neurology_preliminary_screen.True": 59,
