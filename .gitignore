@@ -1,2 +1,3 @@
+# Keep Python-generated cache folders and compiled files out of the repository.
 __pycache__/
 *.pyc
