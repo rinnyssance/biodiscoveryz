@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { GuidedTour } from '../Tour/GuidedTour';
 
 const LINKS = [
-  { to: '/', label: 'Overview', end: true },
+  { to: '/', label: 'Dashboard', end: true },
   { to: '/patients', label: 'Patients', end: false },
   { to: '/neurology', label: 'Neurology', end: false },
   { to: '/interoperability', label: 'Interoperability', end: false },
@@ -13,6 +14,7 @@ export function Layout() {
   const location = useLocation();
   const mainRef = useRef<HTMLElement>(null);
   const lastPath = useRef(location.pathname);
+  const [demoOpen, setDemoOpen] = useState(false);
 
   // After in-app navigation, move focus to the page content so keyboard and
   // screen-reader users start at the new page instead of the old link. On the
@@ -20,6 +22,7 @@ export function Layout() {
   useEffect(() => {
     if (lastPath.current === location.pathname) return;
     lastPath.current = location.pathname;
+    setDemoOpen(false);
     mainRef.current?.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   }, [location.pathname]);
@@ -48,22 +51,19 @@ export function Layout() {
               ))}
             </ul>
           </nav>
-          <span className="research-badge">Research prototype · not for clinical use</span>
+          <div className="header-tools">
+            <div className="demo-control" onKeyDown={(event) => { if (event.key === 'Escape') { setDemoOpen(false); event.currentTarget.querySelector('button')?.focus(); } }}>
+              <button type="button" className="research-badge" aria-expanded={demoOpen} aria-controls="demo-popover" onClick={() => setDemoOpen(!demoOpen)}>Research Demo</button>
+              {demoOpen ? <div id="demo-popover" className="demo-popover" role="region" aria-label="Research demo information"><p>Educational research prototype. Clinical records are deidentified; names and hospital labels are fictional or simulated. Not for clinical decisions.</p><Link to="/about" onClick={() => setDemoOpen(false)}>About the project</Link></div> : null}
+            </div>
+            <GuidedTour />
+          </div>
         </div>
       </header>
       <main id="main" ref={mainRef} tabIndex={-1} style={{ outline: 'none' }}>
         <Outlet />
       </main>
-      <footer className="site-footer">
-        <p>
-          Educational research prototype for the IBM Z Datathon 2026. Not a clinical decision-support tool and not an
-          electronic health record.
-        </p>
-        <p>
-          Clinical data: MIMIC-IV Clinical Database Demo v2.2 (deidentified). Patient names, hospitals and departments are
-          fictional or simulated.
-        </p>
-      </footer>
+      <footer className="site-footer">BioDiscovery Z · IBM Z Datathon 2026 · <Link to="/about">Research methods and limitations</Link></footer>
     </>
   );
 }

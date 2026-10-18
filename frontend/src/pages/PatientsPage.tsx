@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { EmptyState, ErrorMessage, Loading, Pager, Tag, useTitle } from '../components/Common/Common';
+import { EmptyState, ErrorMessage, Loading, Pager, useTitle } from '../components/Common/Common';
 import { ScreeningStatus } from '../components/Patients/ScreeningStatus';
 import { useApi } from '../hooks/useApi';
 import { api, DEFAULT_PAGE_SIZE, patientPath } from '../services/api';
@@ -40,21 +40,14 @@ export function PatientsPage() {
     <>
       <section className="page-head" aria-labelledby="patients-title">
         <div className="page-head__text">
-          <p className="eyebrow">Patient directory</p>
-          <h1 id="patients-title">Find a patient record</h1>
-          <p className="lede">
-            Search by fictional name or demo patient ID, then open a record to see its admissions, diagnoses and
-            laboratory results.
-          </p>
-          <div className="row" style={{ marginTop: 14 }}>
-            <Tag kind="changed">Names are fictional</Tag>
-            <Tag kind="changed">Hospitals and departments are simulated</Tag>
-          </div>
+          <p className="eyebrow">Clinical data explorer</p>
+          <h1 id="patients-title">Patients</h1>
+          <p className="small muted">Names are fictional; hospital and department labels are simulated.</p>
         </div>
       </section>
 
       <section className="card stack" aria-labelledby="search-label">
-        <form className="field" role="search" onSubmit={(e) => e.preventDefault()}>
+        <form data-tour="patient-search" className="field" role="search" onSubmit={(e) => e.preventDefault()}>
           <label id="search-label" htmlFor="patient-search">
             Search patients
           </label>
@@ -70,7 +63,7 @@ export function PatientsPage() {
             maxLength={80}
           />
           <span id="search-hint" className="field__hint">
-            Matches fictional names and demo IDs, ignoring case. Results are fetched from the server 20 at a time.
+            Search fictional names or demo IDs. Results update as you type.
           </span>
         </form>
 
@@ -102,13 +95,13 @@ export function PatientsPage() {
           </EmptyState>
         ) : null}
 
+        <div data-tour="patient-results">
         {data && data.total > 0 && !page.loading ? (
           <>
             <div className="table-wrap patient-table" tabIndex={0} role="region" aria-label="Patient table, scrolls sideways on small screens">
               <table>
                 <caption>
-                  Patients {data.offset + 1}–{Math.min(data.offset + data.limit, data.total)}. Names are fictional; hospitals and
-                  departments are simulated.
+                  Patients {data.offset + 1}–{Math.min(data.offset + data.limit, data.total)} of {data.total}.
                 </caption>
                 <thead>
                   <tr>
@@ -167,6 +160,7 @@ export function PatientsPage() {
             <Pager total={data.total} limit={data.limit} offset={data.offset} onChange={goTo} label="Patient directory" />
           </>
         ) : null}
+        </div>
       </section>
     </>
   );

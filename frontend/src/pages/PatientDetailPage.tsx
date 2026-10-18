@@ -51,20 +51,14 @@ export function PatientDetailPage() {
             <div className="page-head__text">
               <p className="eyebrow mono">{p.demo_patient_id}</p>
               <h1 id="patient-title">{p.synthetic_patient_name}</h1>
-              <div className="row" style={{ marginTop: 12 }}>
-                {p.synthetic_identity ? <Tag kind="changed">Fictional identity</Tag> : null}
-                {p.hospital_assignment_simulated ? <Tag kind="changed">Simulated hospital</Tag> : null}
-                {p.department_assignment_simulated ? <Tag kind="changed">Simulated department</Tag> : null}
-                <Tag kind="changed">Dates shifted at source</Tag>
-                <ScreeningStatus preliminary={p.neurology_preliminary_screen} validated={p.neurology_screen_validated} />
-              </div>
+              <p className="small muted" style={{ marginTop: 8 }}>Fictional name and simulated location · source-shifted dates</p>
             </div>
-            <Link className="button" to={`/interoperability?patient=${patientPath(p.demo_patient_id)}`}>
+            <Link data-tour="patient-fhir" className="button" to={`/interoperability?patient=${patientPath(p.demo_patient_id)}`}>
               View as FHIR resource
             </Link>
           </section>
 
-          <section className="grid" style={{ ['--min' as string]: '300px' }} aria-label="Patient summary">
+          <section data-tour="patient-summary" className="grid" style={{ ['--min' as string]: '300px' }} aria-label="Patient summary">
             <div className="card">
               <h2>Record summary</h2>
               <dl className="facts" style={{ marginTop: 14 }}>
@@ -81,30 +75,17 @@ export function PatientDetailPage() {
               </dl>
             </div>
             <div className="card stack">
-              <h2>Source and limitations</h2>
-              <p className="small prose">
-                Source:{' '}
-                <a href={p.data_source_url} target="_blank" rel="noreferrer">
-                  {p.data_source}
-                </a>
-                . Clinical values are copied from the deidentified source without imputation.
-              </p>
-              <ul className="small prose" style={{ paddingLeft: 20, margin: 0 }}>
-                <li>The name, hospital and department are fictional or simulated for this demonstration.</li>
-                <li>Dates and the anchor year are shifted by the source and are not real calendar dates.</li>
-                <li>Anchor age is the age supplied for the anchor year, not a current age.</li>
-                <li>
-                  Neurological screening:{' '}
-                  {p.neurology_preliminary_screen
-                    ? 'this record carries a preliminary flag. It has not been clinically validated and is not a diagnosis.'
-                    : 'no preliminary flag. This says nothing about the absence of a condition.'}
-                </li>
-                <li>Lab tests are identified by item ID only; no verified test names are available.</li>
-              </ul>
+              <h2>Neurological screening</h2>
+              <ScreeningStatus preliminary={p.neurology_preliminary_screen} validated={p.neurology_screen_validated} />
+              <p className="small prose">{p.neurology_preliminary_screen
+                ? 'A diagnosis code matched the preliminary screen. This is not a confirmed clinical diagnosis.'
+                : 'No code matched the preliminary screen. This does not rule out a condition.'}</p>
+              <p className="small muted">Laboratory tests use item IDs; verified test names are unavailable.</p>
+              <Link to="/about" className="small">Source, methods and limitations</Link>
             </div>
           </section>
 
-          <section aria-label="Clinical history" className="card" style={{ padding: 0 }}>
+          <section data-tour="patient-history" aria-label="Clinical history" className="card" style={{ padding: 0 }}>
             <div className="tabs" role="tablist" aria-label="Clinical history">
               {TABS.map((t, index) => (
                 <button
