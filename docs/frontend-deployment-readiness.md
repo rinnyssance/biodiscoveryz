@@ -6,6 +6,47 @@ FastAPI API and imported SQLite dataset. No Vercel deployment, hosted FastAPI se
 IBM Z connection, or production access-control flow was available to test. Nothing
 was deployed or changed in another teammate's implementation.
 
+## October 18, 2026 recheck
+
+**Decision remains NO-GO.** Maci's frontend refinement is now merged into `main`
+(`fa415e0`), and the current checkout includes Ronin's later documentation commit
+(`5f638ab`). The frontend still works against the **local** FastAPI/SQLite path:
+`npm run build` passed, 16/16 frontend tests passed, and 17/17 live API checks
+passed through the local Vite proxy. The live responses reported 100 patients,
+275 admissions, 4,506 diagnoses, and 107,727 laboratory results. These checks
+did not exercise a hosted frontend, hosted FastAPI service, or Db2.
+
+The Vercel team account is accessible, but a project matching BioDiscovery Z or
+its GitHub repository was not present at recheck. No hosted FastAPI HTTPS base URL
+has been identified. The checked-in frontend example still uses a local proxy;
+its `VITE_API_BASE_URL` is empty. The backend's Db2 data-source option still stops
+with an explicit configuration error because the patient schema and authorized
+connection details are not configured. The backend also lacks an access-control
+flow and allowed browser origin for a separately hosted frontend. Ronin's report
+that a notebook can connect to Db2 from LinuxONE is useful context, but it does
+not verify the browser → API → patient data path. No notebook credentials from
+the shared screenshot were used; that disclosure needs separate handling by the
+credential owner.
+
+The frontend now has [`vercel.json`](../frontend/vercel.json) for React Router
+deep links, following [Vercel's Vite SPA guidance](https://vercel.com/docs/frameworks/frontend/vite).
+This only configures **frontend routing**. The eventual Vercel project must use
+`frontend` as its root directory and a tested HTTPS FastAPI base URL for
+`VITE_API_BASE_URL`; that value is public in the browser bundle and must never
+contain a password or token. The API host, origin policy, authentication, and
+protected Db2 connection must be selected and verified separately. The local
+`vite.config.ts` proxy does not run in a Vercel static deployment.
+
+No Vercel project or deployment was created in this recheck. Production approval
+still requires testing from the deployed frontend origin through the hosted API
+to its intended patient data source, plus the security and credential blockers
+described below. Direct browser inspection of the local Vite page was blocked by
+the browser tool's localhost URL policy, so no new visual or mobile-browser result
+is claimed here. Ronin subsequently edited the Db2 guides in `5f638ab`; the
+credential locations in the October 17 finding below describe that earlier
+snapshot, not a new finding about the current lines. Rotation or replacement of
+previously exposed credentials has not been verified.
+
 ## Deployment boundary
 
 The possible deployment is **Maci's frontend on Vercel**. The FastAPI backend needs
@@ -88,7 +129,7 @@ were inspected in source but not all opened; mobile layout remains unverified.
 
 ## Separate security blocker: hardcoded Db2 credential text
 
-The current tracked [`docs/DB2_Howto.md`](DB2_Howto.md) includes password-like
+The October 17 tracked [`docs/DB2_Howto.md`](DB2_Howto.md) included password-like
 literals in connection examples at lines **41, 85, 134, and 208**. The values are not
 repeated here. A previous public commit also exposed Db2 credentials and an encryption
 passphrase; a later redaction did not remove all current examples or Git history.
