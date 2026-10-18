@@ -44,6 +44,37 @@ The application is intended as a research and educational prototype, not a clini
 
 ---
 
+## 🎬 Application Walkthrough
+
+These recordings show the research interface running locally against the backend and
+the full demo dataset. Names, hospitals and departments are fictional or simulated.
+
+### Research overview
+
+![Overview page: dataset totals, anchor-age and gender-code charts with written findings, and the preliminary screening summary](docs/assets/frontend/overview-dashboard.gif)
+
+The landing page reads live totals and summaries from the API and explains where the
+data comes from and what was changed for the demo.
+
+### Patient search and records
+
+![Searching the patient directory for a fictional name and opening that patient's record](docs/assets/frontend/patient-search.gif)
+
+Search by fictional name or demo ID, then open a record with its source details and
+limitations. Histories are paged on the server, 20 rows at a time.
+
+### From record to FHIR resource
+
+![Opening a patient's FHIR view, switching patients and copying the FHIR R4 Patient JSON](docs/assets/frontend/fhir-interoperability.gif)
+
+Each patient can be viewed as a FHIR R4 Patient resource, with a field-by-field mapping.
+This demonstrates one resource type; it is not a FHIR server.
+
+More recordings (clinical history tabs and neurological screening) and screenshots are
+listed in the [frontend guide](frontend/README.md#walkthrough-gifs-and-screenshots).
+
+---
+
 ## 👥 Meet the Team
 
 BioDiscovery Z brings together scientific research, healthcare compliance, cybersecurity, and user-centered design.
@@ -107,6 +138,24 @@ Maci leads the design of an accessible, intuitive interface for interacting with
 - Support usability testing and interface improvements.
 - Contribute visual materials for the project demonstration.
 
+**Completed work:** Maci designed and built the project's research interface, a
+React and TypeScript application in [frontend/](frontend/) that reads live data from
+the local FastAPI backend. It has six pages: a research overview with dataset totals
+and labelled charts, a searchable patient directory, patient records with paged
+admission, diagnosis and laboratory histories, a neurological screening page, an
+interoperability page that shows each fictional patient as a FHIR R4 Patient resource,
+and an about page that separates implemented from proposed capabilities. Her design
+makes the data's limits visible: consistent tags mark fictional names, simulated
+assignments, shifted dates and preliminary flags; every chart has a written finding;
+missing values are shown rather than hidden; and CSV upload appears only as a disabled
+planned feature. The interface is keyboard accessible, adapts to phone screens, and
+passed automated WCAG 2 A/AA checks on every page.
+
+**Limits:** The interface runs locally and has not been deployed. It inherits the
+backend's scope: no upload, Patient-only FHIR, and no patient-level sign-in, so it is
+for the authorized local demonstration only. Setup, design notes and test results are
+in the [frontend guide](frontend/README.md).
+
 ### 🏥 Gio — Healthcare Compliance Research Analyst
 
 Gio investigates the healthcare privacy, regulatory, and ethical considerations associated with medical data systems.
@@ -153,6 +202,8 @@ descriptive summaries, FHIR Patient translation, and a local read-only API.
 | FHIR demonstration | Python mapping for Patient resources; `jsonschema` verifies official R4 JSON structure in development |
 | Local server | Uvicorn, bound to `127.0.0.1` |
 | Automated tests | pytest for the combined suite, existing `unittest` checks, and HTTPX through the API test client |
+| Research interface | React 18, TypeScript, Vite, React Router and Recharts in [frontend/](frontend/), reading the local API through a development proxy |
+| Interface tests | Vitest and Testing Library with labelled mock responses, plus live API checks |
 | Version control | Git and GitHub to track and share the work |
 | Documentation and reports | Markdown for explanations; JSON for machine-readable findings |
 
@@ -163,8 +214,8 @@ tools are not established by repository evidence.
 
 **Integration boundary:** A Db2 connection probe is available, but live Db2 data
 mapping cannot be completed until the team supplies authorized access and its actual
-table definitions. The React/Vite dashboard is not in this repository yet, so there
-is no frontend build or Vercel deployment to verify. See the [implementation boundary](docs/implementation-boundary.md).
+table definitions. The React/Vite interface is in [frontend/](frontend/) and builds
+locally; it has not been deployed, so there is no Vercel deployment to verify. See the [implementation boundary](docs/implementation-boundary.md).
 PostgreSQL, pandas, and a newer Python runtime remain possible future choices.
 
 
