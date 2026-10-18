@@ -12,7 +12,7 @@ export function PatientsPage() {
   const offset = Math.max(0, Number(params.get('offset')) || 0);
   const [draft, setDraft] = useState(search);
 
-  // Wait until typing pauses before asking the server, to avoid a request per keystroke.
+  // Wait until typing pauses so searching the dataset does not run for every keystroke.
   useEffect(() => {
     if (draft === search) return;
     const timer = window.setTimeout(() => {
