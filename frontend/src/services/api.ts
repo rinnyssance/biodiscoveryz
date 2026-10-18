@@ -1,5 +1,6 @@
-// The one place the interface talks to the backend.
-// It never connects to a database and never stores patient records in browser storage.
+// The one place the interface reads patient data: local API in development or
+// patient-specific files from the published CSV snapshot in a static build.
+// It never connects to a database or stores patient records in browser storage.
 import type {
   AdmissionRecord,
   DemographicsSummary,
@@ -19,6 +20,8 @@ export const MAX_PAGE_SIZE = 100;
 export const DEFAULT_PAGE_SIZE = 20;
 
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
+const USE_STATIC_SNAPSHOT = import.meta.env.PROD && !BASE_URL;
+export const STATIC_SNAPSHOT = USE_STATIC_SNAPSHOT;
 
 export type ApiErrorKind = 'not-found' | 'invalid-request' | 'dataset-missing' | 'network' | 'server';
 
@@ -111,7 +114,7 @@ export function patientPath(id: string) {
   return encodeURIComponent(id.trim());
 }
 
-export const api = {
+const remoteApi = {
   health: () => request<HealthResponse>('/health'),
   overview: () => cached<Overview>('/api/overview'),
   demographics: () => cached<DemographicsSummary>('/api/demographics/summary'),
@@ -130,3 +133,105 @@ export const api = {
     cached<HistoryPage<LabRecord>>(`/api/patients/${patientPath(id)}/labs${query({ limit: clampLimit(limit), offset })}`),
   fhirPatient: (id: string) => cached<FhirPatient>(`/fhir/Patient/${patientPath(id)}`),
 };
+
+type SnapshotIndex = {
+  overview: Overview;
+  demographics: DemographicsSummary;
+  screening: ScreeningSummary;
+  patients: PatientDetail[];
+};
+
+type SnapshotPatient = {
+  patient: PatientDetail;
+  admissions: AdmissionRecord[];
+  diagnoses: DiagnosisRecord[];
+  labs: LabRecord[];
+};
+
+async function snapshotFile<T>(path: string): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`/dataset/${path}`, { headers: { Accept: 'application/json' } });
+  } catch (error) {
+    throw new ApiError('network', null, "Can't load the published dataset snapshot. Check the connection and try again.", (error as Error).message);
+  }
+  if (!response.ok) throw errorFor(response.status);
+  try {
+    return (await response.json()) as T;
+  } catch {
+    throw new ApiError('network', null, 'The published dataset file could not be read. Try again later.');
+  }
+}
+
+function snapshotCached<T>(key: string, load: () => Promise<T>): Promise<T> {
+  const hit = cache.get(key);
+  if (hit) return hit as Promise<T>;
+  const pending = load().catch((error) => {
+    cache.delete(key);
+    throw error;
+  });
+  cache.set(key, pending);
+  return pending;
+}
+
+function snapshotIndex() {
+  return snapshotCached('snapshot:index', () => snapshotFile<SnapshotIndex>('index.json'));
+}
+
+async function snapshotPatient(id: string) {
+  const index = await snapshotIndex();
+  const patient = index.patients.find((item) => item.demo_patient_id === id.trim());
+  if (!patient) throw errorFor(404);
+  return snapshotCached(`snapshot:${patient.demo_patient_id}`, () =>
+    snapshotFile<SnapshotPatient>(`patients/${patientPath(patient.demo_patient_id)}.json`));
+}
+
+function snapshotHistory<T extends AdmissionRecord | DiagnosisRecord | LabRecord>(
+  id: string, kind: 'admissions' | 'diagnoses' | 'labs', limit: number, offset: number,
+): Promise<HistoryPage<T>> {
+  return snapshotPatient(id).then((document) => {
+    const records = document[kind] as T[];
+    return {
+      demo_patient_id: document.patient.demo_patient_id,
+      subject_id: document.patient.subject_id,
+      total: records.length,
+      limit: clampLimit(limit),
+      offset: Math.max(0, offset),
+      items: records.slice(Math.max(0, offset), Math.max(0, offset) + clampLimit(limit)),
+    };
+  });
+}
+
+// Exported separately so the CSV-backed behavior can be tested without a server.
+export const staticApi = {
+  health: (): Promise<HealthResponse> => snapshotIndex().then(() => ({ status: 'ok', database: 'static', dataset_loaded: true })),
+  overview: (): Promise<Overview> => snapshotIndex().then((index) => index.overview),
+  demographics: (): Promise<DemographicsSummary> => snapshotIndex().then((index) => index.demographics),
+  screening: (): Promise<ScreeningSummary> => snapshotIndex().then((index) => index.screening),
+  patients: (opts: { search?: string; limit?: number; offset?: number } = {}): Promise<Page<PatientSummary>> =>
+    snapshotIndex().then((index) => {
+      const term = opts.search?.trim().toLowerCase() ?? '';
+      const matches = index.patients.filter((patient) =>
+        patient.demo_patient_id.toLowerCase().includes(term) || patient.synthetic_patient_name.toLowerCase().includes(term));
+      const limit = clampLimit(opts.limit ?? DEFAULT_PAGE_SIZE);
+      const offset = Math.max(0, opts.offset ?? 0);
+      return { total: matches.length, limit, offset, items: matches.slice(offset, offset + limit) };
+    }),
+  patient: (id: string): Promise<PatientDetail> => snapshotPatient(id).then((document) => document.patient),
+  admissions: (id: string, limit = DEFAULT_PAGE_SIZE, offset = 0) => snapshotHistory<AdmissionRecord>(id, 'admissions', limit, offset),
+  diagnoses: (id: string, limit = DEFAULT_PAGE_SIZE, offset = 0) => snapshotHistory<DiagnosisRecord>(id, 'diagnoses', limit, offset),
+  labs: (id: string, limit = DEFAULT_PAGE_SIZE, offset = 0) => snapshotHistory<LabRecord>(id, 'labs', limit, offset),
+  fhirPatient: (id: string): Promise<FhirPatient> => snapshotPatient(id).then(({ patient }) => ({
+    resourceType: 'Patient',
+    id: patient.demo_patient_id,
+    identifier: [{ system: 'https://github.com/rinnyssance/biodiscoveryz/identifier/demo-patient-id', value: patient.demo_patient_id }],
+    name: [{ text: patient.synthetic_patient_name }],
+    gender: ({ F: 'female', M: 'male' } as Record<string, string>)[patient.gender] ?? 'unknown',
+    meta: { tag: [{
+      system: 'https://github.com/rinnyssance/biodiscoveryz/codes/data-kind',
+      code: 'fictional-identity', display: 'Fictional demonstration identity',
+    }] },
+  })),
+};
+
+export const api = USE_STATIC_SNAPSHOT ? staticApi : remoteApi;

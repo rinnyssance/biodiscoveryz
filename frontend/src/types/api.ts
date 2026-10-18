@@ -3,7 +3,7 @@
 
 export interface HealthResponse {
   status: 'ok';
-  database: 'connected';
+  database: 'connected' | 'static';
   dataset_loaded: boolean;
 }
 

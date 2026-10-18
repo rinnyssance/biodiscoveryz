@@ -1,0 +1,8 @@
+BioDiscovery Z published CSV snapshot
+Source: MIMIC-IV Clinical Database Demo v2.2, PhysioNet.
+https://physionet.org/content/mimic-iv-demo/2.2/
+DOI: https://doi.org/10.13026/dp1f-ex47
+Derived from data/raw/BioDiscovery_Z_all_100_patients_synthetic_dashboard.csv.
+Names are fictional; hospital and department assignments are simulated.
+Clinical records are deidentified source data with shifted dates.
+Open Data Commons Open Database License v1.0: LICENSE.txt.
