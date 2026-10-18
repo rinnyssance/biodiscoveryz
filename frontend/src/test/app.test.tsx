@@ -16,7 +16,7 @@ function renderAt(path: string) {
   );
 }
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => { vi.unstubAllGlobals(); window.localStorage.clear(); });
 
 describe('API client', () => {
   it('maps HTTP errors to readable messages', () => {
@@ -57,7 +57,7 @@ describe('Overview page', () => {
     expect(screen.getByText('11')).toBeInTheDocument();
     expect(screen.getByText(/3 have no linked admission/)).toBeInTheDocument();
     expect(await screen.findByText(/2 of 7 patients/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Upload CSV' })).toBeDisabled();
+    expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
   });
 
   it('explains a missing dataset (HTTP 503)', async () => {
@@ -69,6 +69,13 @@ describe('Overview page', () => {
     const alerts = await screen.findAllByRole('alert');
     expect(alerts.some((a) => /not been imported/.test(a.textContent ?? ''))).toBe(true);
   });
+
+  it('does not claim a dataset is connected when the backend is unavailable', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch'); }));
+    renderAt('/');
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Can't reach/);
+    expect(screen.queryByText('Dataset connected')).not.toBeInTheDocument();
+  });
 });
 
 describe('Patient directory', () => {
@@ -79,7 +86,7 @@ describe('Patient directory', () => {
     const table = screen.getByRole('table');
     expect(within(table).getByRole('link', { name: 'Mock Person' })).toHaveAttribute('href', '/patients/BDZ-TEST');
     expect(within(table).getByText('Preliminary flag')).toBeInTheDocument();
-    expect(screen.getByText('Names are fictional')).toBeInTheDocument();
+    expect(screen.getByText(/Names are fictional; hospital and department labels are simulated/)).toBeInTheDocument();
   });
 
   it('sends the search to the server and shows an empty state', async () => {
@@ -120,12 +127,30 @@ describe('Patient detail', () => {
 });
 
 describe('Navigation', () => {
+  it('guides a patient search, supports back and finish, and saves only the page key', async () => {
+    mockFetch([{ match: /\/api\/patients/, body: { total: 0, limit: 20, offset: 0, items: [] } }]);
+    renderAt('/patients');
+    const user = userEvent.setup();
+    const dialog = screen.getByRole('dialog', { name: 'Find a record' });
+    expect(within(dialog).getByRole('button', { name: 'Next' })).toHaveFocus();
+    await user.click(within(dialog).getByRole('button', { name: 'Next' }));
+    expect(screen.getByRole('dialog', { name: 'Open a patient' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByRole('dialog', { name: 'Find a record' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    await user.click(screen.getByRole('button', { name: 'Finish' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(window.localStorage.length).toBe(1);
+    expect(window.localStorage.getItem('bdz-tour-v1:patients')).toBe('1');
+    expect(screen.getByRole('button', { name: /Show this page’s guided tour/ })).toHaveFocus();
+  });
+
   it('has the five main sections in order', () => {
     mockFetch([]);
     renderAt('/about');
     const nav = screen.getByRole('navigation', { name: 'Main' });
     expect(within(nav).getAllByRole('link').map((l) => l.textContent)).toEqual([
-      'Overview',
+      'Dashboard',
       'Patients',
       'Neurology',
       'Interoperability',

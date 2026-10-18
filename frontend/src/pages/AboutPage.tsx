@@ -39,7 +39,7 @@ const FAQ: { q: string; a: ReactNode }[] = [
     q: 'How do I get started?',
     a: (
       <p>
-        Start on the <Link to="/">Overview</Link> for the size and shape of the dataset, then open the{' '}
+        Start on the <Link to="/">Dashboard</Link> for the size and shape of the dataset, then open the{' '}
         <Link to="/patients">patient directory</Link>, search by fictional name or demo ID, and open a record to browse its
         admissions, diagnoses and laboratory results.
       </p>
@@ -91,8 +91,9 @@ const FAQ: { q: string; a: ReactNode }[] = [
     q: 'Is it secure or HIPAA compliant?',
     a: (
       <p>
-        It makes no compliance claim. It runs locally, stores nothing in your browser, and never connects the browser to a
-        database. Sign-in, access control and audit logging are proposed, not built; see the status table above.
+        It makes no compliance claim. The browser does not connect directly to a database. Patient records are not saved in
+        browser storage; the page guide remembers only which guide was completed. Sign-in, access control and audit logging
+        are proposed, not built; see the status table above.
       </p>
     ),
   },
@@ -137,6 +138,7 @@ export function AboutPage() {
             observations. Names are fictional and hospital and department assignments are simulated. The clinical data itself
             is not synthetic.
           </p>
+          <p className="prose small" style={{ marginTop: 10 }}>Source-shifted dates are preserved, so years far in the future are expected. Laboratory tests are displayed by item ID because verified test names are unavailable.</p>
         </div>
         <div className="card">
           <h2>Methodology</h2>
@@ -144,8 +146,14 @@ export function AboutPage() {
             The team validated the dataset, imported it into related tables and serves descriptive summaries only. See{' '}
             <a href={`${REPO_URL}/blob/main/docs/materials-and-methods.md`} target="_blank" rel="noreferrer">materials and methods</a>,{' '}
             <a href={`${REPO_URL}/blob/main/docs/validation-results.md`} target="_blank" rel="noreferrer">validation results</a> and{' '}
-            <a href={`${REPO_URL}/blob/main/docs/implementation-boundary.md`} target="_blank" rel="noreferrer">implementation boundary</a>.
+            <a href={`${REPO_URL}/blob/main/docs/data-dictionary.md`} target="_blank" rel="noreferrer">data dictionary</a>.
           </p>
+          <p className="prose small" style={{ marginTop: 10 }}>The neurological flag uses ICD-9 320–359 or ICD-10 G code matches. It is a preliminary screen with no clinical validation.</p>
+        </div>
+        <div className="card">
+          <h2>FHIR demonstration</h2>
+          <p className="prose small" style={{ marginTop: 10 }}>HL7 FHIR provides a common structure for health data. This prototype maps each demo identity to a FHIR R4 Patient resource. It does not map encounters, conditions, or observations, and no live hospital exchange is implemented.</p>
+          <p className="prose small" style={{ marginTop: 10 }}>The <a href={`${REPO_URL}/blob/main/docs/implementation-boundary.md`} target="_blank" rel="noreferrer">implementation boundary</a> documents what is working and what remains proposed.</p>
         </div>
       </section>
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ErrorMessage, Loading, Tag, useTitle } from '../components/Common/Common';
+import { ErrorMessage, Loading, useTitle } from '../components/Common/Common';
 import { useApi } from '../hooks/useApi';
 import { api, MAX_PAGE_SIZE } from '../services/api';
 
@@ -35,20 +35,12 @@ export function InteroperabilityPage() {
       <section className="page-head" aria-labelledby="fhir-title">
         <div className="page-head__text">
           <p className="eyebrow">Interoperability</p>
-          <h1 id="fhir-title">One record, in a shared standard</h1>
-          <p className="lede">
-            Hospitals store information in different systems and formats. HL7 FHIR is a widely used standard for
-            describing health data so different systems can read it the same way. Pick a fictional patient to see how their
-            record maps to a FHIR R4 Patient resource.
-          </p>
-          <div className="row" style={{ marginTop: 14 }}>
-            <Tag kind="planned">Demonstration of one resource type</Tag>
-            <Tag kind="changed">Fictional identities</Tag>
-          </div>
+          <h1 id="fhir-title">Interoperability</h1>
+          <p className="small muted">Inspect the mapped FHIR R4 Patient resource for a fictional identity.</p>
         </div>
       </section>
 
-      <section className="card" aria-labelledby="pick-label">
+      <section data-tour="fhir-selector" className="card" aria-labelledby="pick-label">
         <div className="field" style={{ maxWidth: 420 }}>
           <label id="pick-label" htmlFor="patient-select">
             Patient
@@ -71,7 +63,7 @@ export function InteroperabilityPage() {
       {source.error ? <ErrorMessage error={source.error} onRetry={source.retry} /> : null}
 
       <section className="grid" style={{ ['--min' as string]: '340px' }} aria-label="Source record and FHIR resource">
-        <div className="card">
+        <div data-tour="fhir-mapping" className="card">
           <h2>Readable fields</h2>
           <p className="card__sub">How each field in the dataset maps into the standard resource</p>
           {source.loading || fhir.loading ? <Loading label="Loading mapping" /> : null}
@@ -112,7 +104,7 @@ export function InteroperabilityPage() {
           ) : null}
         </div>
 
-        <div className="card stack">
+        <div data-tour="fhir-json" className="card stack">
           <div className="row" style={{ justifyContent: 'space-between' }}>
             <h2>FHIR R4 Patient JSON</h2>
             <button type="button" className="button button--small" onClick={copy} disabled={!json}>
@@ -124,40 +116,21 @@ export function InteroperabilityPage() {
           </p>
           {fhir.error ? <ErrorMessage error={fhir.error} onRetry={fhir.retry} /> : null}
           {fhir.loading ? <Loading label="Loading FHIR resource" /> : null}
-          {json ? (
-            <pre className="code" tabIndex={0} aria-label={`FHIR Patient resource for ${selected}`}>
-              {json}
-            </pre>
+          {fhir.data ? (
+            <div className="json-sections" aria-label={`FHIR Patient resource for ${selected}`}>
+              {Object.entries(fhir.data).map(([field, value]) => (
+                <details key={field} className="json-section" open={field === 'resourceType' || field === 'id'}>
+                  <summary><code>{field}</code><span className="small muted">{Array.isArray(value) ? `${value.length} item${value.length === 1 ? '' : 's'}` : typeof value === 'object' && value !== null ? 'object' : 'value'}</span></summary>
+                  <pre className="code" tabIndex={0}>{JSON.stringify(value, null, 2)}</pre>
+                </details>
+              ))}
+              <details className="json-section"><summary>Complete JSON</summary><pre className="code" tabIndex={0}>{json}</pre></details>
+            </div>
           ) : null}
         </div>
       </section>
 
-      <section className="grid" style={{ ['--min' as string]: '320px' }} aria-label="About FHIR">
-        <div className="card">
-          <h2>What FHIR is</h2>
-          <p className="prose small" style={{ marginTop: 10 }}>
-            FHIR (Fast Healthcare Interoperability Resources) is a standard published by HL7. It breaks health information
-            into “resources” such as Patient, Encounter and Observation, each with agreed field names and codes, so a record
-            written by one system can be read by another.
-          </p>
-        </div>
-        <div className="card">
-          <h2>Why interoperability matters</h2>
-          <p className="prose small" style={{ marginTop: 10 }}>
-            Health data is often spread across institutions that store it differently. A shared format makes it easier for
-            researchers to combine and compare datasets, and for care teams to see a fuller picture, while privacy and access
-            rules still apply.
-          </p>
-        </div>
-        <div className="card card--dashed">
-          <h2>What this demo is not</h2>
-          <ul className="prose small" style={{ paddingLeft: 20, marginTop: 10 }}>
-            <li>It shows one FHIR Patient resource per fictional patient, not a complete FHIR server.</li>
-            <li>It does not exchange records with any real hospital.</li>
-            <li>Encounters, conditions and observations are not yet mapped.</li>
-          </ul>
-        </div>
-      </section>
+      <p className="small muted">This view maps Patient only; it does not exchange records with hospitals. <a href="/about">Methods and limitations</a></p>
     </>
   );
 }

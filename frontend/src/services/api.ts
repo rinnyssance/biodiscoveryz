@@ -38,13 +38,13 @@ export class ApiError extends Error {
 export function errorFor(status: number | null, detail?: string): ApiError {
   switch (status) {
     case null:
-      return new ApiError('network', null, "Can't reach the BioDiscovery Z backend. Check that it is running on this computer, then try again.", detail);
+      return new ApiError('network', null, "Can't reach the BioDiscovery Z backend. Check the API connection and try again.", detail);
     case 404:
       return new ApiError('not-found', 404, "That record wasn't found. Check the demo patient ID.", detail);
     case 422:
       return new ApiError('invalid-request', 422, 'The request was not accepted. A page size, search or ID may be out of range.', detail);
     case 503:
-      return new ApiError('dataset-missing', 503, 'The dataset has not been imported yet. Run "python -m backend.import_dataset", then reload.', detail);
+      return new ApiError('dataset-missing', 503, 'The dataset has not been imported into the connected backend yet. Ask the project team to check the import, then reload.', detail);
     default:
       return new ApiError('server', status, `The backend returned an unexpected error (${status}).`, detail);
   }
