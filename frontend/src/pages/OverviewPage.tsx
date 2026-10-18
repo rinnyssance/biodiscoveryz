@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { BarChartCard } from '../components/Charts/BarChartCard';
 import { ErrorMessage, Loading, Tag, useTitle } from '../components/Common/Common';
 import { useApi } from '../hooks/useApi';
-import { api, ApiError } from '../services/api';
+import { api, ApiError, STATIC_SNAPSHOT } from '../services/api';
 
 const AGE_ORDER = ['0-17', '18-39', '40-64', '65-89', '90+'];
 
@@ -41,7 +41,7 @@ export function OverviewPage() {
       <section data-tour="dashboard-metrics" aria-labelledby="totals-title" className="stack">
         <div>
           <h2 id="totals-title">Dataset totals</h2>
-          {health.data?.dataset_loaded && overview.data ? <span className="small muted">Dataset connected</span> : null}
+          {health.data?.dataset_loaded && overview.data ? <span className="small muted">{STATIC_SNAPSHOT ? 'Published CSV snapshot loaded' : 'Dataset connected'}</span> : null}
         </div>
         {overview.loading ? <Loading label="Loading dataset totals" /> : null}
         {overview.error && !blocked ? <ErrorMessage error={overview.error} onRetry={overview.retry} /> : null}

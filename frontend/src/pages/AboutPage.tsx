@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Tag, useTitle } from '../components/Common/Common';
 import { REPO_URL } from '../constants';
+import { STATIC_SNAPSHOT } from '../services/api';
 
 const TEAM = [
   { name: 'Erin', role: 'Science and Data Lead', work: 'Dataset preparation, validation, scientific methodology and the Python backend.' },
@@ -15,7 +16,7 @@ const CAPABILITIES: { name: string; note: string; status: Status }[] = [
   { name: 'CSV validation and relational import', note: 'Validator and repeatable SQLite importer in the repository', status: 'working' },
   { name: 'Read-only API for patients, histories and summaries', note: 'Local FastAPI backend; the browser never connects to a database', status: 'working' },
   { name: 'FHIR R4 Patient resource', note: 'One resource type; all 100 examples passed the official R4 JSON schema', status: 'working' },
-  { name: 'Research interface (this site)', note: 'React frontend reading live responses from the local API', status: 'working' },
+  { name: 'Research interface (this site)', note: STATIC_SNAPSHOT ? 'React frontend reading a published, read-only CSV snapshot' : 'React frontend reading live responses from the local API', status: 'working' },
   { name: 'Fictional identities and simulated assignments', note: 'Source records are deidentified; the names, hospitals and departments shown are fictional', status: 'working' },
   { name: 'Db2 column encryption for patient names', note: 'Steps written up by the team; running setup not verified in this repository', status: 'documented' },
   { name: 'Encrypted (TLS) connection to Db2', note: 'An optional connection probe exists; no verified live connection yet', status: 'documented' },
@@ -91,9 +92,9 @@ const FAQ: { q: string; a: ReactNode }[] = [
     q: 'Is it secure or HIPAA compliant?',
     a: (
       <p>
-        It makes no compliance claim. The browser does not connect directly to a database. Patient records are not saved in
-        browser storage; the page guide remembers only which guide was completed. Sign-in, access control and audit logging
-        are proposed, not built; see the status table above.
+        It makes no compliance claim. The browser does not connect directly to a database. The app does not write patient
+        records to localStorage; the page guide remembers only which guide was completed. Sign-in, access control and audit
+        logging are proposed, not built; see the status table above.
       </p>
     ),
   },
@@ -139,6 +140,7 @@ export function AboutPage() {
             is not synthetic.
           </p>
           <p className="prose small" style={{ marginTop: 10 }}>Source-shifted dates are preserved, so years far in the future are expected. Laboratory tests are displayed by item ID because verified test names are unavailable.</p>
+          {STATIC_SNAPSHOT ? <p className="prose small" style={{ marginTop: 10 }}>This site reads a published snapshot derived from Erin's CSV, not a live Db2 database. <a href="/dataset/NOTICE.txt">Dataset attribution</a> · <a href="/dataset/LICENSE.txt">ODbL license</a>.</p> : null}
         </div>
         <div className="card">
           <h2>Methodology</h2>
@@ -221,7 +223,7 @@ export function AboutPage() {
             <li>Never request or display real patient-identifying information.</li>
             <li>Keep patient records out of browser storage, analytics and logs.</li>
             <li>Keep credentials on the server, never in the browser or public settings.</li>
-            <li>Limit patient-level views to the authorized local demonstration until access control is reviewed.</li>
+            <li>{STATIC_SNAPSHOT ? 'The published CSV snapshot is public demo data; it has no account-based access control.' : 'Limit patient-level views to the authorized local demonstration until access control is reviewed.'}</li>
             <li>Use IBM Z and Db2 capabilities such as encryption, access control and auditing in the proposed architecture.</li>
           </ul>
         </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { GuidedTour } from '../Tour/GuidedTour';
+import { STATIC_SNAPSHOT } from '../../services/api';
 
 const LINKS = [
   { to: '/', label: 'Dashboard', end: true },
@@ -60,6 +61,7 @@ export function Layout() {
           </div>
         </div>
       </header>
+      {STATIC_SNAPSHOT ? <p className="snapshot-banner">Published CSV snapshot · no live IBM Z or Db2 connection</p> : null}
       <main id="main" ref={mainRef} tabIndex={-1} style={{ outline: 'none' }}>
         <Outlet />
       </main>
