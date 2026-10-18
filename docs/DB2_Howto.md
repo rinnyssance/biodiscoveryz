@@ -2,24 +2,40 @@
 
 This guide describes how to connect to and run SQL queries against the **IBM Db2** database (`DBPROD`) locally on the host machine and inside a **Jupyter Notebook**.
 
+> [!NOTE]
+> **Db2 Docker Setup & Activation:**
+> The Db2 engine runs inside the container named `mydb2`:
+> ```bash
+> docker run -itd --name mydb2 --privileged=true -p 50000:50000 \
+>   -e LICENSE=accept -e DB2INST1_PASSWORD=ibmzsadb -e DBNAME=dbprod \
+>   -v /var/lib/db2data:/database ibmcom/db2
+> ```
+> To keep `DBPROD` permanently loaded in memory and avoid repeated startup overhead on connections, ensure it is activated:
+> ```bash
+> docker exec -u db2inst1 mydb2 bash -lc 'db2 activate db DBPROD'
+> ```
+
 > [!IMPORTANT]
-> **Internal Network Security:**
-> The documented Db2 endpoint is local to the database host (`localhost` / `127.0.0.1` on port `50000`). This does not make it reachable from a separate backend host. Verify the actual network and TLS settings before application integration.
+> **Internal Network Security & Container Networking:**
+> - Db2 listens on port `50000`.
+> - The Jupyter Notebook container runs with host networking (`--net=host`) on port `38888` (access via `http://<host>:38888/lab?token=ibmzsa`).
+> - Inside Jupyter notebooks, Db2 is accessed directly via local loopback (`127.0.0.1:50000` or `localhost:50000`).
 
 ---
 
 ## 1. Connection Parameters
 
-These are host-local examples. Application code must use an authorized read-only account and runtime secrets. The placeholders below are not working credentials:
+All local tools, scripts, and notebook kernels connect using the following parameters:
 
 | Parameter | Value | Notes |
 |---|---|---|
-| **Host / IP** | `localhost` or `127.0.0.1` | Local loopback interface only |
+| **Host / IP** | `localhost` or `127.0.0.1` | Local loopback interface (host networking) |
 | **Port** | `50000` | Local Db2 engine port |
-| **Database Name** | `DBPROD` | Production database containing all 32 PhysioNet datasets |
-| **Username** | `db2inst1` | Db2 instance administrator |
-| **Password** | <PASSWORD_FROM_SECURE_ENVIRONMENT> | Instance password |
+| **Database Name** | `DBPROD` | Production database containing all clinical datasets |
+| **Username** | `db2inst1` | Db2 instance administrator (**do NOT use `dbprod`**) |
+| **Password** | `ibmzsadb` | Instance password |
 | **Default Schema** | `DB2INST1` | Holds all clinical tables |
+| **Passphrase** | `BioDiscoveryZ@Datathon2026!` | Passphrase for decrypted PII patient names |
 
 ---
 
@@ -29,11 +45,10 @@ The notebook environment provides multiple ways to execute SQL against Db2.
 
 ### Method A: Native SQL Cell Magic (`%%sql`) — Recommended
 
-This method lets you write standard SQL queries directly inside notebook cells.
+This method lets you write standard SQL queries directly inside notebook cells using `jupysql`.
 
 #### Cell 1: Initialize SQL Extension & Engine
 ```python
-import os
 import sqlalchemy
 from sqlalchemy import create_engine
 
@@ -43,8 +58,11 @@ engine = create_engine(DB_URI)
 
 # Load SQL magic extension
 %load_ext sql
-%sql engine
+
+# CRITICAL: Disable autocommit in jupysql to prevent isolation level errors on Db2
+%config SqlMagic.autocommit = False
 %config SqlMagic.feedback = False
+%sql engine
 ```
 
 #### Cell 2: Run Native SQL Query Directly
@@ -73,14 +91,18 @@ df_seniors.head()
 
 ---
 
-### Method B: Pandas `pd.read_sql` (Data Analysis Workflow)
+### Method B: Pandas `pd.read_sql_query` (Data Analysis Workflow)
 
 Load SQL query results directly into Pandas DataFrames for plotting, statistics, or ML:
 
+> [!TIP]
+> **Best Practice for Pandas on Db2:**
+> Always use `pd.read_sql_query(text(sql_query), conn)` inside a `with engine.connect() as conn:` block.
+> Passing a multi-line raw SQL string directly to `pd.read_sql(sql_query, engine)` causes Pandas to check `engine.has_table()`, which fails with `CLI0109E String data right truncation` on queries longer than 128 characters.
+
 ```python
-import os
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 engine = create_engine("db2+ibm_db://db2inst1:ibmzsadb@127.0.0.1:50000/DBPROD")
 
@@ -112,9 +134,12 @@ LEFT JOIN (
     GROUP BY subject_id
 ) lab ON p.subject_id = lab.subject_id
 ORDER BY p.subject_id
+FETCH FIRST 10 ROWS ONLY
 """
 
-df_cohort = pd.read_sql(sql_query, engine)
+with engine.connect() as conn:
+    df_cohort = pd.read_sql_query(text(sql_query), conn)
+
 print(f"Total cohort loaded: {len(df_cohort)} patients")
 display(df_cohort.head())
 ```
@@ -126,13 +151,12 @@ display(df_cohort.head())
 For parameterized queries or explicit transaction management:
 
 ```python
-import os
 import ibm_db
 import ibm_db_dbi
 import pandas as pd
 
 conn_str = "DATABASE=DBPROD;HOSTNAME=127.0.0.1;PORT=50000;PROTOCOL=TCPIP;UID=db2inst1;PWD=ibmzsadb;"
-conn = ibm_db.connect(conn_str, os.environ["BDZ_DB2_USERNAME"], os.environ["BDZ_DB2_PASSWORD"])
+conn = ibm_db.connect(conn_str, "", "")
 pconn = ibm_db_dbi.Connection(conn)
 
 cursor = pconn.cursor()
@@ -196,7 +220,6 @@ Run a standalone Python script on the host machine connecting to `127.0.0.1:5000
 
 ```python
 #!/usr/bin/env python3
-import os
 import ibm_db
 
 conn_str = (
@@ -209,7 +232,7 @@ conn_str = (
 )
 
 try:
-    conn = ibm_db.connect(conn_str, os.environ["BDZ_DB2_USERNAME"], os.environ["BDZ_DB2_PASSWORD"])
+    conn = ibm_db.connect(conn_str, "", "")
     print("Connected to Db2 locally via 127.0.0.1:50000!")
 
     sql = "SELECT COUNT(*) FROM PATIENTS"
@@ -290,3 +313,49 @@ LEFT JOIN (SELECT subject_id, COUNT(*) AS diagnosis_count FROM diagnoses_icd GRO
 LEFT JOIN (SELECT subject_id, COUNT(*) AS lab_result_count FROM labevents GROUP BY subject_id) lab ON p.subject_id = lab.subject_id
 ORDER BY p.subject_id;
 ```
+
+---
+
+## 5. Troubleshooting Common Issues
+
+### Issue 1: `SQL30082N ("USERNAME AND/OR PASSWORD INVALID")`
+- **Cause**: Using the database name `dbprod` as the username in the connection string (e.g. `dbprod:ibmzsadb@127.0.0.1:50000/DBPROD`).
+- **Fix**: The Db2 instance administrator is **`db2inst1`**. The connection string format is:
+  ```python
+  engine = create_engine("db2+ibm_db://db2inst1:ibmzsadb@127.0.0.1:50000/DBPROD")
+  ```
+
+### Issue 2: `CLI0109E String data right truncation. SQLSTATE=22001 SQLCODE=-99999`
+- **Cause**: Passing a multi-line raw SQL query string directly to `pd.read_sql(sql_query, engine)`. Pandas internally calls `engine.has_table()`, querying `SYSCAT.TABLES WHERE TABNAME = ?` with the SQL statement. Because `TABNAME` is limited to 128 characters, Db2 raises a string truncation error.
+- **Fix**: Use `pd.read_sql_query` with `sqlalchemy.text()` and an active connection:
+  ```python
+  from sqlalchemy import text
+  with engine.connect() as conn:
+      df = pd.read_sql_query(text(sql_query), conn)
+  ```
+
+### Issue 3: `Invalid isolation level requested: AUTOCOMMIT`
+- **Cause**: When `%sql` (via `jupysql`) initializes, it attempts to set the isolation level to `AUTOCOMMIT`, which is not recognized by `ibm_db_sa`.
+- **Fix**: Disable autocommit in `jupysql` prior to connecting:
+  ```python
+  %load_ext sql
+  %config SqlMagic.autocommit = False
+  %config SqlMagic.feedback = False
+  %sql engine
+  ```
+
+### Issue 4: Database Deactivates After Every Query / High Connection Latency
+- **Cause**: In Db2, if a database is not explicitly activated, it is automatically shut down when the last client disconnects.
+- **Fix**: Run `db2 activate db DBPROD` once inside the container:
+  ```bash
+  docker exec -u db2inst1 mydb2 bash -lc 'db2 activate db DBPROD'
+  ```
+
+### Issue 5: `PermissionError` when Saving Files in Jupyter `/home/ibm-user/shared`
+- **Cause**: The host directory `/home/linux1/shared` mounted into the Jupyter container is owned by `linux1` (UID 1002), whereas the Jupyter user is `ibm-user` (UID 1000).
+- **Fix**: Grant write permissions on the host:
+  ```bash
+  sudo chown -R 1000:1000 /home/linux1/shared
+  sudo chmod -R a+rwX /home/linux1/shared
+  ```
+

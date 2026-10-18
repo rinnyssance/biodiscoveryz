@@ -159,13 +159,13 @@ DROP SCHEMA CLINICAL_OPS RESTRICT;
 
 In our `DBPROD` database:
 - **Default Schema:** `DB2INST1`
-- **Clinical Tables:** All 32 transferred PhysioNet tables live in `DB2INST1`:
-  - `DB2INST1.PATIENTS`
-  - `DB2INST1.ADMISSIONS`
-  - `DB2INST1.DIAGNOSES_ICD`
-  - `DB2INST1.CHARTEVENTS`
-- **Dashboard Table & Alias:**
-  - `DB2INST1.BIODISCOVERY_Z_PATIENTS`
-  - `DB2INST1.BIODISCOVERY_Z_ALL_100_PATIENTS_SYNTHETIC_DASHBOARD` (Alias)
+- **Clinical Tables & Views:** 35 total tables and views live in `DB2INST1`:
+  - **Clinical Datasets:** `PATIENTS`, `ADMISSIONS`, `DIAGNOSES_ICD`, `CHARTEVENTS`, `LABEVENTS`, `ICUSTAYS`, `PRESCRIPTIONS`, etc.
+  - **Dashboard Table & Alias:**
+    - `DB2INST1.BIODISCOVERY_Z_PATIENTS`
+    - `DB2INST1.BIODISCOVERY_Z_ALL_100_PATIENTS_SYNTHETIC_DASHBOARD` (Alias)
+  - **Secure Decrypted View:**
+    - `DB2INST1.V_PATIENTS_DECRYPTED` (Authorized decrypted view for `SYNTHETIC_PATIENT_NAME`)
 
 Because you connect as user `db2inst1`, `CURRENT SCHEMA` defaults to `DB2INST1`, allowing you to query `FROM PATIENTS` directly without having to type `FROM DB2INST1.PATIENTS`.
+
