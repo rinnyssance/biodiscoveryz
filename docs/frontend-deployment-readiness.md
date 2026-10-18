@@ -1,5 +1,25 @@
 # BioDiscovery Z pre-deployment readiness audit
 
+## October 18, 2026 static snapshot launch
+
+The **frontend-only CSV snapshot** is live at
+[biodiscoveryz-frontend.vercel.app](https://biodiscoveryz-frontend.vercel.app/).
+The Vercel project builds `frontend` from GitHub `main` and publishes the generated
+files in `frontend/public/dataset/`. An unauthenticated request returned HTTP 200
+for the home page, the dataset index, and a patient deep link. Hosted browser checks
+showed the dashboard counts, patient search, a patient detail page, lab pagination,
+and deep-link refresh. The deployed snapshot contains 100 patients, 275 admissions,
+4,506 diagnoses, and 107,727 lab results. Its [method and limitations](static-snapshot-site.md)
+are documented separately.
+
+This launch does **not** change the NO-GO decision below for the proposed live
+browser → FastAPI → Db2 path. The Vercel site reads published CSV-derived files;
+it does not connect to the local FastAPI backend, IBM Z, or Db2. A hosted API URL,
+network path, authentication, CORS policy, and database connection have not been
+verified in the intended environment. The previously exposed credential remains
+a separate security blocker for that integration. No IBM Z service or backend was
+deployed to Vercel, and no change to Ronin's infrastructure was made.
+
 **Decision: NO-GO — deployment is blocked.** This audit inspected merged `main` at
 `7a86a6b` on October 17, 2026. It tested the React/Vite frontend with the local
 FastAPI API and imported SQLite dataset. No Vercel deployment, hosted FastAPI service,

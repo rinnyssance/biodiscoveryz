@@ -5,12 +5,12 @@ type Step = { target: string; title: string; body: string };
 
 const TOURS: Record<string, Step[]> = {
   dashboard: [
-    { target: 'dashboard-metrics', title: 'Dataset at a glance', body: 'These counts come from the connected API and describe different record types.' },
+    { target: 'dashboard-metrics', title: 'Dataset at a glance', body: 'These counts summarize the available patient, admission, diagnosis, and lab records.' },
     { target: 'dashboard-charts', title: 'Explore patterns', body: 'The charts summarize the loaded records. The neurological flag is preliminary.' },
   ],
   patients: [
-    { target: 'patient-search', title: 'Find a record', body: 'Search fictional names or demo IDs. The server returns matching patients.' },
-    { target: 'patient-results', title: 'Open a patient', body: 'Select a name to review history. Results are paged by the server.' },
+    { target: 'patient-search', title: 'Find a record', body: 'Search fictional names or demo IDs to find matching patients.' },
+    { target: 'patient-results', title: 'Open a patient', body: 'Select a name to review history. Use the page controls to browse results.' },
   ],
   patient: [
     { target: 'patient-summary', title: 'Record summary', body: 'This summary identifies the demo record and shows its available counts.' },
@@ -18,7 +18,7 @@ const TOURS: Record<string, Step[]> = {
     { target: 'patient-fhir', title: 'FHIR representation', body: 'Open this patient’s FHIR R4 Patient resource in Interoperability.' },
   ],
   neurology: [
-    { target: 'neurology-summary', title: 'Screening counts', body: 'The API reports preliminary flags and clinically validated flags separately.' },
+    { target: 'neurology-summary', title: 'Screening counts', body: 'Preliminary screening flags and clinically validated flags are shown separately.' },
     { target: 'neurology-context', title: 'Interpret carefully', body: 'A code match is a screening lead, not a confirmed diagnosis.' },
   ],
   interoperability: [
