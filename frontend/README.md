@@ -21,7 +21,7 @@ hospital and department assignments, shifted dates and preliminary screening fla
 | Patient detail (Admissions, Diagnoses, Laboratory results tabs) | `/patients/:id` | `GET /api/patients/{id}`, `/admissions`, `/diagnoses`, `/labs` |
 | Neurological research | `/neurology` | `GET /api/neurology/screening-summary` |
 | Interoperability and FHIR | `/interoperability` | `GET /api/patients?limit=100`, `/api/patients/{id}`, `/fhir/Patient/{id}` |
-| About, security and research ethics | `/about` | none (documentation drawn from the repository) |
+| About, security and research ethics, with a short FAQ | `/about` | none (documentation drawn from the repository) |
 
 Navigation: Overview | Patients | Neurology | Interoperability | About.
 
@@ -133,9 +133,9 @@ Sans and Mono, bundled locally rather than loaded from a font service.
 Results from the last run, on the local backend with the full dataset:
 
 - `npm run build`: type check and production build succeed.
-- `npm test`: 13 component and integration tests pass, covering error mapping (404, 422,
+- `npm test`: 14 component and integration tests pass, covering error mapping (404, 422,
   503, network), page-size limits, ID encoding, API-driven totals, search and empty
-  state, missing lab fields, navigation order and no browser storage. All responses in
+  state, missing lab fields, navigation order, the FAQ and no browser storage. All responses in
   these tests are mocks, labelled as such in `src/test/mockApi.ts`.
 - `npm run test:live`: 17 checks pass against the real backend, including totals,
   name and ID search, no-match search, pagination of every history, unlinked labs, null

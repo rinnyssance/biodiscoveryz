@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { Tag, useTitle } from '../components/Common/Common';
 import { REPO_URL } from '../constants';
 
@@ -21,6 +23,79 @@ const CAPABILITIES: { name: string; note: string; status: Status }[] = [
   { name: 'Sign-in and role-based access control', note: 'The backend has no patient-level authentication; required before any wider deployment', status: 'proposed' },
   { name: 'Audit logging of data access', note: 'Who viewed which record, and when', status: 'proposed' },
   { name: 'CSV upload', note: 'The backend has no upload endpoint yet', status: 'proposed' },
+];
+
+const FAQ: { q: string; a: ReactNode }[] = [
+  {
+    q: 'What is BioDiscovery Z?',
+    a: (
+      <p>
+        An educational research prototype for exploring a deidentified clinical dataset, built for the IBM Z Datathon 2026.
+        It is not a clinical tool and not an electronic health record.
+      </p>
+    ),
+  },
+  {
+    q: 'How do I get started?',
+    a: (
+      <p>
+        Start on the <Link to="/">Overview</Link> for the size and shape of the dataset, then open the{' '}
+        <Link to="/patients">patient directory</Link>, search by fictional name or demo ID, and open a record to browse its
+        admissions, diagnoses and laboratory results.
+      </p>
+    ),
+  },
+  {
+    q: 'What data is included?',
+    a: (
+      <p>
+        100 patients with 275 hospital admissions, 4,506 ICD-coded diagnosis assignments and 107,727 laboratory observations,
+        from the MIMIC-IV Clinical Database Demo v2.2. Laboratory tests are identified by item ID only.
+      </p>
+    ),
+  },
+  {
+    q: 'Are these real patients?',
+    a: (
+      <p>
+        The clinical records come from real hospital data that the source deidentified. The names, hospitals and departments
+        shown here are fictional or simulated, and all dates were shifted by the source, which is why years such as 2180
+        appear.
+      </p>
+    ),
+  },
+  {
+    q: 'Does a neurological flag mean a patient has a condition?',
+    a: (
+      <p>
+        No. The flag is a preliminary screen based on diagnosis codes, and none has been clinically validated. See{' '}
+        <Link to="/neurology">Neurology</Link> for what it does and does not mean.
+      </p>
+    ),
+  },
+  {
+    q: 'Can I upload my own dataset?',
+    a: <p>Not yet. Upload is a planned feature; the backend does not have an upload endpoint.</p>,
+  },
+  {
+    q: 'What is FHIR, and can this share records with hospitals?',
+    a: (
+      <p>
+        FHIR is a widely used standard for exchanging health data. The <Link to="/interoperability">Interoperability</Link>{' '}
+        page shows each fictional patient as one FHIR Patient resource. It is a demonstration only and does not exchange data
+        with any hospital.
+      </p>
+    ),
+  },
+  {
+    q: 'Is it secure or HIPAA compliant?',
+    a: (
+      <p>
+        It makes no compliance claim. It runs locally, stores nothing in your browser, and never connects the browser to a
+        database. Sign-in, access control and audit logging are proposed, not built; see the status table above.
+      </p>
+    ),
+  },
 ];
 
 const STATUS_LABEL: Record<Status, string> = { working: 'Working', documented: 'Documented', proposed: 'Proposed' };
@@ -117,6 +192,18 @@ export function AboutPage() {
           </table>
         </div>
         <p className="small muted">Working: runs in the repository. Documented: written up, not yet verified. Proposed: planned design.</p>
+      </section>
+
+      <section className="stack" aria-labelledby="faq-title">
+        <h2 id="faq-title">Frequently asked questions</h2>
+        <div className="faq">
+          {FAQ.map((item) => (
+            <details key={item.q} className="faq__item">
+              <summary>{item.q}</summary>
+              <div className="prose small">{item.a}</div>
+            </details>
+          ))}
+        </div>
       </section>
 
       <section className="grid" style={{ ['--min' as string]: '320px' }} aria-label="Privacy, security and limitations">

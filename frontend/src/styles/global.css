@@ -161,3 +161,10 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 }
 .patient-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
 .patient-card a { font-weight: 600; text-decoration: none; }
+
+/* FAQ */
+.faq { display: flex; flex-direction: column; gap: 8px; }
+.faq__item { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.faq__item summary { cursor: pointer; padding: 14px 18px; font-weight: 500; min-height: 44px; }
+.faq__item[open] summary { border-bottom: 1px solid #eef2f7; }
+.faq__item .prose { padding: 12px 18px 16px; }

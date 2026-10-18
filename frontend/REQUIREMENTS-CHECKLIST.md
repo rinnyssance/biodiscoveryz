@@ -119,6 +119,7 @@ Status key: ✅ done · ⚠️ done with a note · ⏳ waiting on a team decisio
 | Implemented versus proposed capabilities | ✅ | "Implemented versus proposed" table, with evidence for each status |
 | Scientific and compliance limitations | ✅ | Limitations card |
 | Team list: Erin, Ronin, Maci, Gio | ✅ | Team cards |
+| *Addition, not in the brief:* short FAQ (getting started, what data, real patients?, flags, upload, FHIR, security) | ⚠️ | Section on the About page, so the five-item navigation stays exactly as specified |
 | No claim that IBM Z, Db2 encryption, HIPAA compliance or live integration was demonstrated | ✅ | Stated explicitly; Db2 items marked Documented or Proposed |
 
 ### 6. API integration

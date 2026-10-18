@@ -133,6 +133,13 @@ describe('Navigation', () => {
     ]);
   });
 
+  it('answers common questions on the About page', async () => {
+    mockFetch([]);
+    renderAt('/about');
+    expect(screen.getByRole('heading', { name: 'Frequently asked questions' })).toBeInTheDocument();
+    expect(screen.getByText('Are these real patients?')).toBeInTheDocument();
+  });
+
   it('does not store patient data in browser storage', async () => {
     mockFetch([{ match: /\/api\/patients/, body: { total: 1, limit: 20, offset: 0, items: [mockPatient] } }]);
     renderAt('/patients');
